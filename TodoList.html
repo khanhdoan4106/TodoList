@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Focus — AI To-Do</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s; }
+    body.light { background: #f7f6f3; }
+    body.dark  { background: #111110; }
+    .illust-glow-dark {
+      filter: drop-shadow(0 0 8px rgba(255, 210, 120, 0.5))
+              drop-shadow(0 0 20px rgba(255, 190, 80, 0.3));
+    }
+    .illust-glow-cup {
+      filter: drop-shadow(0 0 10px rgba(255, 200, 100, 0.35))
+              drop-shadow(0 0 4px rgba(255, 220, 150, 0.25));
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.85; }
+      50%      { opacity: 1; }
+    }
+    .dark-ambient-glow {
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    #root { display: flex; justify-content: center; min-height: 100vh; }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes floatA {
+      0%,100% { transform: translateY(0px) rotate(-2deg); }
+      50%      { transform: translateY(-8px) rotate(1deg); }
+    }
+    @keyframes floatB {
+      0%,100% { transform: translateY(0px) rotate(3deg); }
+      50%      { transform: translateY(-6px) rotate(-1deg); }
+    }
+    @keyframes floatC {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px) rotate(2deg); }
+    }
+    @keyframes steam {
+      0%   { transform: translateY(0) scaleX(1); opacity: 0.7; }
+      50%  { transform: translateY(-10px) scaleX(1.3); opacity: 0.4; }
+      100% { transform: translateY(-20px) scaleX(0.8); opacity: 0; }
+    }
+    .float-a { animation: floatA 4s ease-in-out infinite; }
+    .float-b { animation: floatB 5s ease-in-out infinite; }
+    .float-c { animation: floatC 3.5s ease-in-out infinite; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e8e4dd; border-radius: 3px; }
+    .fireworks-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9998;
+    }
+    .celebration-banner {
+      position: fixed; left: 50%; top: 18%;
+      transform: translateX(-50%);
+      z-index: 9999; pointer-events: none;
+      text-align: center; padding: 20px 28px;
+      border-radius: 20px;
+      animation: celebratePop 0.6s cubic-bezier(.34,1.56,.64,1) forwards,
+                 celebrateWiggle 0.5s ease-in-out 0.6s infinite;
+      max-width: min(92vw, 420px);
+    }
+    .celebration-banner.light {
+      background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(255,248,230,0.95));
+      border: 2px solid #ffd93d;
+      box-shadow: 0 12px 48px rgba(255, 180, 50, 0.45), 0 0 0 4px rgba(255, 217, 61, 0.2);
+    }
+    .celebration-banner.dark {
+      background: linear-gradient(135deg, rgba(40,38,32,0.96), rgba(50,45,30,0.94));
+      border: 2px solid #c5e17a;
+      box-shadow: 0 12px 48px rgba(200, 160, 50, 0.35), 0 0 0 4px rgba(197, 225, 122, 0.15);
+    }
+    .celebration-title {
+      font-size: clamp(22px, 5vw, 28px); font-weight: 800;
+      letter-spacing: 0.02em; line-height: 1.2; margin: 0;
+      background: linear-gradient(90deg, #e8643a, #ffd93d, #9acd32, #4f8ef7, #e8643a);
+      background-size: 200% auto;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: celebrateShine 2s linear infinite;
+    }
+    .celebration-sub {
+      font-size: clamp(14px, 3.5vw, 17px); font-weight: 800;
+      margin: 10px 0 0; letter-spacing: 0.06em;
+    }
+    .celebration-banner.light .celebration-sub { color: #1a1917; }
+    .celebration-banner.dark .celebration-sub { color: #e8e4dd; }
+    .celebration-rest {
+      font-size: clamp(13px, 3.2vw, 15px); font-weight: 600;
+      margin: 12px 0 0; line-height: 1.45;
+    }
+    .celebration-banner.light .celebration-rest { color: #6b6660; }
+    .celebration-banner.dark .celebration-rest { color: #b0aba3; }
+    @keyframes celebratePop {
+      0% { opacity: 0; transform: translateX(-50%) scale(0.4); }
+      100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    }
+    @keyframes celebrateWiggle {
+      0%, 100% { transform: translateX(-50%) rotate(-1deg); }
+      50% { transform: translateX(-50%) rotate(1deg); }
+    }
+    @keyframes celebrateShine {
+      to { background-position: 200% center; }
+    }
+    .task-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .task-table th {
+      text-align: left; padding: 10px 8px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+    }
+    .task-table td {
+      padding: 10px 8px; vertical-align: middle;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    body.dark .task-table td { border-top-color: rgba(255,255,255,0.06); }
+    .task-table tr:hover td { background: rgba(0,0,0,0.02); }
+    body.dark .task-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .task-table tr.task-row-done td {
+      background: rgba(180, 220, 120, 0.42) !important;
+    }
+    body.dark .task-table tr.task-row-done td {
+      background: rgba(50, 72, 38, 0.55) !important;
+    }
+    .task-table tr.task-row-done:hover td {
+      background: rgba(160, 210, 100, 0.5) !important;
+    }
+    body.dark .task-table tr.task-row-done:hover td {
+      background: rgba(55, 80, 42, 0.62) !important;
+    }
+    .task-input, .task-notes {
+      width: 100%; border: 1px solid transparent; border-radius: 6px;
+      padding: 6px 8px; font-family: inherit; font-size: 13px;
+      background: transparent; outline: none; transition: border 0.15s, background 0.15s;
+    }
+    .task-input:focus, .task-notes:focus {
+      border-color: #e8e4dd; background: rgba(255,255,255,0.5);
+    }
+    body.dark .task-input:focus, body.dark .task-notes:focus {
+      border-color: #3a3a36; background: rgba(0,0,0,0.2);
+    }
+    .star-btn {
+      background: none; border: none; cursor: pointer; padding: 0 1px;
+      font-size: 17px; line-height: 1; transition: transform 0.1s;
+    }
+    .star-btn:hover { transform: scale(1.15); }
+    .scene-clock {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+    @keyframes clockTick {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+    .scene-clock-time { animation: clockTick 1s ease-in-out infinite; }
+  </style>
+</head>
+<body class="light">
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+const STORAGE_KEY = "focus_tasks_v4";
+
+function migrateTasks(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item, i) => {
+    const userSet = !!item.priorityUserSet;
+    const priority = userSet
+      ? Math.min(5, Math.max(0, Number(item.priority) || 0))
+      : 0;
+    return {
+      id: item.id ?? Date.now() + i,
+      order: item.order ?? i + 1,
+      name: (item.name ?? item.text ?? "").trim(),
+      priority,
+      priorityUserSet: userSet,
+      notes: item.notes ?? "",
+      done: !!item.done,
+      tag: item.tag ?? null,
+    };
+  });
+}
+
+function sortByOrder(list) {
+  return [...list].sort((a, b) => a.order - b.order);
+}
+const DAYS = ["Chủ nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"];
+const MONTHS = ["tháng 1","tháng 2","tháng 3","tháng 4","tháng 5","tháng 6","tháng 7","tháng 8","tháng 9","tháng 10","tháng 11","tháng 12"];
+
+// Demo suggestions by keyword
+const DEMO_SUGGESTIONS = {
+  default: [
+    "Xác định mục tiêu cụ thể và deadline",
+    "Chia nhỏ thành các bước hành động 15-30 phút",
+    "Ưu tiên theo mức độ quan trọng và khẩn cấp",
+    "Loại bỏ điều gây phân tâm trong lúc làm",
+    "Đặt lịch nhắc nhở và kiểm tra tiến độ"
+  ],
+  học: [
+    "Đọc tài liệu và ghi chú nhanh ý chính",
+    "Làm flashcard cho các khái niệm quan trọng",
+    "Giải bài tập / bài kiểm tra thử",
+    "Ôn lại sau 24h để ghi nhớ sâu hơn",
+    "Giải thích lại cho người khác để kiểm tra hiểu biết"
+  ],
+  code: [
+    "Đọc và hiểu rõ yêu cầu bài toán",
+    "Phác thảo thuật toán / flow trên giấy",
+    "Viết test case trước khi code",
+    "Code từng phần nhỏ và test ngay",
+    "Review lại code và tối ưu nếu cần"
+  ],
+  project: [
+    "Định nghĩa rõ scope và deliverable",
+    "Lên timeline với các milestone cụ thể",
+    "Phân công và ước tính effort từng task",
+    "Xác định rủi ro và phương án dự phòng",
+    "Họp kick-off và đồng bộ với team"
+  ]
+};
+
+function getDemoSuggestions(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes("học") || lower.includes("ôn") || lower.includes("thi")) return DEMO_SUGGESTIONS.học;
+  if (lower.includes("code") || lower.includes("lập trình") || lower.includes("app") || lower.includes("web")) return DEMO_SUGGESTIONS.code;
+  if (lower.includes("project") || lower.includes("dự án") || lower.includes("team")) return DEMO_SUGGESTIONS.project;
+  return DEMO_SUGGESTIONS.default;
+}
+
+function todayLabel() {
+  const d = new Date();
+  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+/* ── Theme colors ── */
+function noteGridStyle(dark) {
+  const line = dark ? "#2e2e2b" : "#e8e4dd";
+  return {
+    backgroundImage: `linear-gradient(${line} 1px, transparent 1px), linear-gradient(90deg, ${line} 1px, transparent 1px)`,
+    backgroundSize: "22px 22px",
+  };
+}
+
+function useTheme(dark) {
+  return {
+    bg:       dark ? "#1c1c1a" : "#fff",
+    pageBg:   dark ? "#111110" : "#f7f6f3",
+    noteGrid: noteGridStyle(dark),
+    surface:  dark ? "#252523" : "#f7f6f3",
+    border:   dark ? "#2e2e2b" : "#e8e4dd",
+    text:     dark ? "#e8e4dd" : "#1a1917",
+    muted:    dark ? "#6b6660" : "#6b6660",
+    faint:    dark ? "#3a3a36" : "#e8e4dd",
+    faintTxt: dark ? "#b0aba3" : "#b0aba3",
+    pill:     dark ? "#2e2e2b" : "#e8e4dd",
+    inputBg:  dark ? "#252523" : "#f7f6f3",
+    tagBg:    dark ? "#2d1f1a" : "#fdf0ec",
+    tagTxt:   dark ? "#e8643a" : "#e8643a",
+    aiBg:     dark ? "#1a1f2e" : "#eef4ff",
+    aiTxt:    "#4f8ef7",
+    greenBg:  dark ? "#132419" : "#e8f7ef",
+    greenTxt: "#30a46c",
+    warnBg:   dark ? "#2d1f1a" : "#fdf0ec",
+    warnBorder:dark ? "#5a2e1a" : "#f5c4b0",
+    warnTxt:  dark ? "#e8643a" : "#b05020",
+    doneTxt:  dark ? "#c5e17a" : "#6b8e23",
+    doneStrike: dark ? "#b8d94e" : "#9acd32",
+    frameOuter: dark ? "#3d3d38" : "#ddd8ce",
+    frameInner: dark ? "#2a2a26" : "#f5f2ec",
+    frameRing:  dark ? "#1a1917" : "#ebe6dc",
+    listBorder: dark ? "#353532" : "#e8e4dd",
+    listInner:  dark ? "#2e2e2b" : "#faf8f5",
+  };
+}
+
+/* ── Progress Ring ── */
+function ProgressRing({ pct, dark }) {
+  const r = 17, circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r={r} fill="none" stroke={dark ? "#2e2e2b" : "#e8e4dd"} strokeWidth="3"/>
+      <circle cx="21" cy="21" r={r} fill="none" stroke="#30a46c" strokeWidth="3"
+        strokeDasharray={`${circ} ${circ}`} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transform:"rotate(-90deg)", transformOrigin:"50% 50%", transition:"stroke-dashoffset 0.4s cubic-bezier(.4,0,.2,1)" }}
+      />
+      <text x="21" y="21" textAnchor="middle" dominantBaseline="central"
+        fontSize="9" fontWeight="700" fill={dark ? "#e8e4dd" : "#1a1917"}
+        fontFamily="'Plus Jakarta Sans', sans-serif">{pct}%</text>
+    </svg>
+  );
+}
+
+/* ── Dark Mode Toggle ── */
+function DarkToggle({ dark, onToggle }) {
+  return (
+    <button onClick={onToggle} title={dark ? "Chế độ sáng" : "Chế độ tối"}
+      style={{
+        background: dark ? "#2e2e2b" : "#e8e4dd",
+        border:"none", borderRadius:20, padding:"6px 10px",
+        cursor:"pointer", display:"flex", alignItems:"center", gap:5,
+        transition:"all 0.2s", flexShrink:0
+      }}>
+      {dark
+        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" stroke="#e8e4dd" strokeWidth="2"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#e8e4dd" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="#6b6660" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      }
+    </button>
+  );
+}
+
+/* ── Checkbox ── */
+function Checkbox({ checked, onChange }) {
+  return (
+    <label style={{ position:"relative", flexShrink:0, marginTop:1, cursor:"pointer" }}>
+      <input type="checkbox" checked={checked} onChange={onChange}
+        style={{ position:"absolute", opacity:0, width:20, height:20, cursor:"pointer", margin:0 }}/>
+      <span style={{
+        width:20, height:20, borderRadius:"50%",
+        border: checked ? "1.8px solid #9acd32" : "1.8px solid #d5d0c8",
+        background: checked ? "#9acd32" : "transparent",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        transition:"all 0.18s cubic-bezier(.4,0,.2,1)", pointerEvents:"none"
+      }}>
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </span>
+    </label>
+  );
+}
+
+/* ── Star priority (0–5, 0 = chưa đặt) ── */
+function StarRating({ value, onChange, dark }) {
+  const v = Math.min(5, Math.max(0, value));
+  return (
+    <div style={{ display:"flex", gap:1, justifyContent:"center" }} title={v === 0 ? "Chưa đặt ưu tiên" : `Ưu tiên ${v}/5`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className="star-btn"
+          aria-label={`${star} sao`}
+          onClick={() => onChange(v === star ? 0 : star)}
+          style={{ color: v > 0 && star <= v ? "#f5b800" : (dark ? "#4a4a46" : "#d5d0c8") }}
+        >
+          {v > 0 && star <= v ? "★" : "☆"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Task table row ── */
+function TaskRow({ task, stt, onToggle, onUpdate, onSetPriority, onDelete, animating, t, dark }) {
+  const displayPriority = task.priorityUserSet ? task.priority : 0;
+  const nameStyle = {
+    color: task.done ? t.doneTxt : t.text,
+    textDecoration: task.done ? "line-through" : "none",
+    textDecorationColor: task.done ? t.doneStrike : "transparent",
+  };
+
+  return (
+    <tr
+      className={task.done ? "task-row-done" : ""}
+      style={{ animation: animating ? "fadeSlide 0.2s ease" : "none", transition:"background 0.2s" }}
+    >
+      <td style={{ width:40, textAlign:"center", fontWeight:700, color: t.faintTxt, fontSize:12 }}>
+        {stt}
+      </td>
+      <td style={{ minWidth:140 }}>
+        <input
+          className="task-input"
+          value={task.name}
+          onChange={(e) => onUpdate(task.id, { name: e.target.value })}
+          placeholder="Tên hoạt động"
+          style={{ ...nameStyle, fontWeight:500 }}
+        />
+        {task.tag ? (
+          <span style={{
+            display:"inline-block", marginTop:4, fontSize:10, fontWeight:600,
+            padding:"1px 6px", borderRadius:4, background: t.tagBg, color: t.tagTxt,
+          }}>{task.tag}</span>
+        ) : null}
+      </td>
+      <td style={{ width:108 }}>
+        <StarRating
+          value={displayPriority}
+          onChange={(p) => onSetPriority(task.id, p)}
+          dark={dark}
+        />
+      </td>
+      <td style={{ minWidth:120 }}>
+        <input
+          className="task-notes"
+          value={task.notes}
+          onChange={(e) => onUpdate(task.id, { notes: e.target.value })}
+          placeholder="Ghi chú…"
+          style={{ color: t.muted, fontSize:12 }}
+        />
+      </td>
+      <td style={{ width:52, textAlign:"center" }}>
+        <Checkbox checked={task.done} onChange={() => onToggle(task.id)}/>
+      </td>
+      <td style={{ width:36 }}>
+        <button
+          type="button"
+          onClick={() => onDelete(task.id)}
+          title="Xóa"
+          style={{
+            background:"none", border:"none", cursor:"pointer", color: t.faintTxt,
+            padding:4, borderRadius:4, display:"flex", alignItems:"center",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/* ── Suggestion Row ── */
+function SuggestionRow({ text, onAdd, t }) {
+  const [added, setAdded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{
+        display:"flex", alignItems:"center", gap:10, padding:"9px 10px",
+        borderRadius:6, transition:"all 0.12s",
+        border: hovered ? `1px solid ${t.border}` : "1px solid transparent",
+        background: hovered ? t.surface : "transparent"
+      }}>
+      <div style={{ width:6, height:6, borderRadius:"50%", background:"#4f8ef7", flexShrink:0 }}/>
+      <span style={{ flex:1, fontSize:13.5, color: t.muted }}>{text}</span>
+      <button onClick={() => { if (!added) { onAdd(text); setAdded(true); } }}
+        style={{
+          fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:11, fontWeight:700,
+          color: added ? "#30a46c" : "#4f8ef7",
+          background: added ? t.greenBg : t.aiBg,
+          border:"none", borderRadius:4, padding:"4px 9px",
+          cursor: added ? "default" : "pointer",
+          transition:"all 0.12s", whiteSpace:"nowrap"
+        }}>
+        {added ? "✓ Đã thêm" : "+ Thêm"}
+      </button>
+    </div>
+  );
+}
+
+/* ── Empty State Illustration ── */
+function IllustGlow({ dark, soft, className, style, children }) {
+  const glow = dark ? (soft ? "illust-glow-cup" : "illust-glow-dark") : "";
+  return (
+    <div className={[glow, className].filter(Boolean).join(" ")} style={style}>
+      {children}
+    </div>
+  );
+}
+
+const VICTORY_QUOTE = {
+  text: "All we have to decide is what to do with the time that is given us.",
+  author: "Gandalf",
+  source: "The Lord of the Rings"
+};
+
+const FILTER_HINT = {
+  active: {
+    icon: "💪",
+    title: "Cố lên nhé!",
+    body: "Mỗi bước nhỏ đều đưa bạn gần hơn tới đích. Chọn một việc, bắt đầu ngay — bạn làm được!",
+  },
+  done: {
+    icon: "🎉",
+    title: "Chúc mừng bạn!",
+    body: "Đây là những gì bạn đã chinh phục. Hãy tự hào và dành cho mình chút thời gian nghỉ ngơi xứng đáng.",
+  },
+};
+
+function Fireworks({ active, dark }) {
+  const canvasRef = useRef(null);
+  const stateRef = useRef({ particles: [], rockets: [], frame: 0 });
+
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const colors = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#ff85a2", "#c5e17a", "#fff", "#e8643a"];
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    stateRef.current = { particles: [], rockets: [], frame: 0 };
+
+    function explode(x, y, color) {
+      const n = 55 + Math.floor(Math.random() * 25);
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 * i) / n + Math.random() * 0.3;
+        const speed = 1.8 + Math.random() * 5;
+        stateRef.current.particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          decay: 0.01 + Math.random() * 0.012,
+          color,
+          size: 1.5 + Math.random() * 2.5,
+        });
+      }
+    }
+
+    function spawnRocket() {
+      stateRef.current.rockets.push({
+        x: 80 + Math.random() * (canvas.width - 160),
+        y: canvas.height + 10,
+        vy: -(7 + Math.random() * 5),
+        targetY: 60 + Math.random() * canvas.height * 0.45,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+
+    let animId;
+    const fade = dark ? "rgba(17,17,16,0.18)" : "rgba(247,246,243,0.2)";
+
+    const loop = () => {
+      const st = stateRef.current;
+      st.frame++;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = fade;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "lighter";
+
+      if (st.frame % 12 === 0) spawnRocket();
+      if (st.frame % 28 === 0 && st.frame > 20) spawnRocket();
+
+      st.rockets = st.rockets.filter((r) => {
+        r.y += r.vy;
+        r.vy *= 0.98;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = r.color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(r.x, r.y);
+        ctx.lineTo(r.x, r.y + 12);
+        ctx.strokeStyle = r.color;
+        ctx.globalAlpha = 0.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        if (r.vy >= 0 || r.y <= r.targetY) {
+          explode(r.x, r.y, r.color);
+          return false;
+        }
+        return true;
+      });
+
+      st.particles = st.particles.filter((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.04;
+        p.vx *= 0.99;
+        p.life -= p.decay;
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        return p.life > 0;
+      });
+      ctx.globalAlpha = 1;
+
+      if (active || st.particles.length || st.rockets.length) {
+        animId = requestAnimationFrame(loop);
+      }
+    };
+    loop();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, [active, dark]);
+
+  if (!active) return null;
+  return <canvas ref={canvasRef} className="fireworks-canvas" aria-hidden="true"/>;
+}
+
+function CelebrationBanner({ dark }) {
+  return (
+    <div className={`celebration-banner ${dark ? "dark" : "light"}`} role="status" aria-live="polite">
+      <p className="celebration-title">Chúc mừng!</p>
+      <p className="celebration-sub">Bạn đã hoàn thành tất cả công việc.</p>
+      <p className="celebration-rest">Hãy nghỉ ngơi đầy đủ nhé.</p>
+    </div>
+  );
+}
+
+function FilterHint({ filter, t, dark, show }) {
+  if (!show || (filter !== "active" && filter !== "done")) return null;
+  const hint = FILTER_HINT[filter];
+  const isDone = filter === "done";
+  return (
+    <div style={{
+      margin:"0 24px 12px", padding:"14px 16px", borderRadius:12,
+      border: `1px solid ${isDone ? (dark ? "#3d4a28" : "#d4e8b0") : (dark ? "#3a3530" : "#e8e4dd")}`,
+      background: isDone
+        ? (dark ? "rgba(45,58,30,0.45)" : "rgba(197,225,122,0.2)")
+        : (dark ? "rgba(45,42,38,0.5)" : "rgba(247,246,243,0.9)"),
+    }}>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+        <span style={{ fontSize:22, lineHeight:1 }} aria-hidden="true">{hint.icon}</span>
+        <div>
+          <p style={{ margin:0, fontSize:14, fontWeight:700, color: isDone ? t.doneTxt : t.text }}>
+            {hint.title}
+          </p>
+          <p style={{ margin:"6px 0 0", fontSize:13, lineHeight:1.55, color: t.muted }}>
+            {hint.body}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatSceneClock() {
+  const d = new Date();
+  return {
+    time: d.toLocaleTimeString("vi-VN", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }),
+    date: d.toLocaleDateString("vi-VN", {
+      weekday: "short", day: "numeric", month: "short",
+    }),
+  };
+}
+
+function SceneClock({ dark }) {
+  const [now, setNow] = useState(formatSceneClock);
+
+  useEffect(() => {
+    const tick = () => setNow(formatSceneClock());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div
+      className="scene-clock float-a"
+      style={{
+        position: "absolute",
+        left: "50%",
+        bottom: 22,
+        transform: "translateX(-50%)",
+        zIndex: 3,
+        minWidth: 88,
+        padding: "8px 12px 10px",
+        borderRadius: 12,
+        textAlign: "center",
+        border: dark ? "1.5px solid #5a4a36" : "1.5px solid #d4a96a",
+        background: dark
+          ? "linear-gradient(180deg, #3d3224 0%, #2a2418 100%)"
+          : "linear-gradient(180deg, #faf3e8 0%, #f0e0c8 100%)",
+        boxShadow: dark
+          ? "0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,220,150,0.12)"
+          : "0 4px 14px rgba(180,140,80,0.2), inset 0 1px 0 rgba(255,255,255,0.8)",
+      }}
+      aria-live="off"
+      aria-label={`Giờ hiện tại ${now.time}`}
+    >
+      <div style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: dark ? "#c5e17a" : "#a07840",
+        marginBottom: 4,
+      }}>
+        Bây giờ
+      </div>
+      <div
+        className="scene-clock-time"
+        style={{
+          fontSize: 17, fontWeight: 700, letterSpacing: "0.06em", lineHeight: 1.1,
+          color: dark ? "#ffe8b0" : "#5c4030",
+          fontFamily: "'Plus Jakarta Sans', monospace",
+        }}
+      >
+        {now.time}
+      </div>
+      <div style={{
+        fontSize: 10, fontWeight: 500, marginTop: 5,
+        color: dark ? "#b0aba3" : "#8a8078",
+      }}>
+        {now.date}
+      </div>
+    </div>
+  );
+}
+
+function EmptyIllustration({ dark, variant, compact }) {
+  const isVictory = variant === "victory";
+  const pad = compact ? "24px 20px 28px" : "40px 24px 48px";
+
+  return (
+    <div style={{ textAlign:"center", padding: pad }}>
+      {!compact && (
+      <div style={{ position:"relative", width:290, height:210, margin:"0 auto 20px" }}>
+        {dark && (
+          <div className="dark-ambient-glow" style={{
+            position:"absolute", left:"48%", top:"58%", transform:"translate(-50%,-50%)",
+            width:240, height:180, borderRadius:"50%",
+            background:"radial-gradient(ellipse, rgba(255, 200, 100, 0.2) 0%, rgba(255, 170, 60, 0.06) 50%, transparent 72%)",
+            pointerEvents:"none", zIndex:0,
+          }}/>
+        )}
+
+        {/* Window — larger, cozy night scene */}
+        <IllustGlow dark={dark} className="float-c" style={{ position:"absolute", right:-4, top:-8, zIndex:1 }}>
+        <svg width="138" height="158" viewBox="0 0 120 138" fill="none">
+          <defs>
+            {dark ? (
+              <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1a2848"/>
+                <stop offset="100%" stopColor="#0d1528"/>
+              </linearGradient>
+            ) : (
+              <linearGradient id="daySky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a8d4f5"/>
+                <stop offset="100%" stopColor="#d4ecff"/>
+              </linearGradient>
+            )}
+            {dark ? (
+              <linearGradient id="lampGlow" x1="0.5" y1="1" x2="0.5" y2="0">
+                <stop offset="0%" stopColor="#ffd080" stopOpacity="0.35"/>
+                <stop offset="100%" stopColor="#ffd080" stopOpacity="0"/>
+              </linearGradient>
+            ) : null}
+          </defs>
+          {/* Outer wall frame */}
+          <rect x="3" y="3" width="114" height="128" rx="8" fill={dark ? "#2a2418" : "#e8f0e8"} stroke={dark ? "#4a4030" : "#b8cfc0"} strokeWidth="2"/>
+          {/* Wood inner frame */}
+          <rect x="9" y="9" width="102" height="108" rx="5" fill={dark ? "#3d3224" : "#c9a66a"} stroke={dark ? "#5a4a36" : "#a07840"} strokeWidth="1.5"/>
+          {/* Glass area */}
+          <rect x="14" y="14" width="92" height="88" rx="4" fill={dark ? "url(#nightSky)" : "url(#daySky)"}/>
+          {/* Cross mullions */}
+          <line x1="60" y1="14" x2="60" y2="102" stroke={dark ? "#4a4030" : "#a07840"} strokeWidth="2.5"/>
+          <line x1="14" y1="58" x2="106" y2="58" stroke={dark ? "#4a4030" : "#a07840"} strokeWidth="2.5"/>
+          {/* Top-left pane — moon or clouds */}
+          {dark ? (
+            <g>
+              <circle cx="38" cy="38" r="9" fill="#f5e6a8" opacity="0.92"/>
+              <circle cx="38" cy="38" r="11" fill="#ffd080" opacity="0.12"/>
+              <circle cx="22" cy="24" r="1.2" fill="#fff" opacity="0.9"/>
+              <circle cx="48" cy="20" r="0.8" fill="#fff" opacity="0.7"/>
+              <circle cx="30" cy="48" r="0.9" fill="#fff" opacity="0.6"/>
+              <circle cx="52" cy="42" r="1" fill="#fff" opacity="0.75"/>
+              <rect x="14" y="58" width="46" height="44" rx="2" fill="url(#lampGlow)"/>
+            </g>
+          ) : (
+            <g>
+              <ellipse cx="34" cy="32" rx="12" ry="6" fill="white" opacity="0.85"/>
+              <ellipse cx="78" cy="28" rx="10" ry="5" fill="white" opacity="0.75"/>
+            </g>
+          )}
+          {/* Top-right pane */}
+          <rect x="62" y="14" width="44" height="44" rx="2" fill={dark ? "#152035" : "#bfdbf7"} opacity={dark ? 0.6 : 0.5}/>
+          {dark ? (
+            <g>
+              <circle cx="88" cy="30" r="1" fill="#fff" opacity="0.8"/>
+              <circle cx="72" cy="22" r="0.7" fill="#fff" opacity="0.55"/>
+              <circle cx="95" cy="40" r="0.9" fill="#fff" opacity="0.65"/>
+            </g>
+          ) : null}
+          {/* Bottom panes — garden / sill plants */}
+          <rect x="14" y="62" width="92" height="40" rx="2" fill={dark ? "#1a3020" : "#b8e0b8"} opacity="0.55"/>
+          <path d="M28 102 Q32 78 38 102" stroke={dark ? "#4ade80" : "#30a46c"} strokeWidth="2" fill="none" strokeLinecap="round"/>
+          <path d="M58 102 Q62 76 68 102" stroke={dark ? "#4ade80" : "#30a46c"} strokeWidth="2" fill="none" strokeLinecap="round"/>
+          <path d="M88 102 Q92 80 96 102" stroke={dark ? "#4ade80" : "#30a46c"} strokeWidth="2" fill="none" strokeLinecap="round"/>
+          {/* Curtains (dark mode) */}
+          {dark ? (
+            <g>
+              <path d="M14 14 L14 102 Q20 58 14 14" fill="#3d2818" opacity="0.5"/>
+              <path d="M106 14 L106 102 Q100 58 106 14" fill="#3d2818" opacity="0.5"/>
+            </g>
+          ) : null}
+          {/* Windowsill */}
+          <rect x="3" y="114" width="114" height="12" rx="3" fill={dark ? "#4a4030" : "#d4a96a"}/>
+          <rect x="3" y="114" width="114" height="4" rx="2" fill={dark ? "#5c5040" : "#e8c88a"} opacity="0.5"/>
+          {/* Small pot on sill */}
+          <rect x="52" y="106" width="16" height="10" rx="2" fill={dark ? "#5c4030" : "#c07840"}/>
+          <ellipse cx="60" cy="106" rx="6" ry="3" fill={dark ? "#2d5a30" : "#4ade80"}/>
+        </svg>
+        </IllustGlow>
+
+        {/* Coffee mug — warm ceramic in dark mode */}
+        <IllustGlow dark={dark} soft={true} className="float-b" style={{ position:"absolute", left:4, bottom:6, zIndex:2 }}>
+        <svg width="80" height="90" viewBox="0 0 80 90" fill="none">
+          <defs>
+            <linearGradient id="cupBody" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={dark ? "#faf3e8" : "#fff8ee"}/>
+              <stop offset="55%" stopColor={dark ? "#e8dcc8" : "#f5e6cc"}/>
+              <stop offset="100%" stopColor={dark ? "#d4c4a8" : "#e8d5b7"}/>
+            </linearGradient>
+            <linearGradient id="coffeeLiquid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={dark ? "#8b5a2b" : "#a06840"} />
+              <stop offset="100%" stopColor={dark ? "#5c3818" : "#6b4423"} />
+            </linearGradient>
+            <linearGradient id="cupShine" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff" stopOpacity={dark ? "0.35" : "0.5"}/>
+              <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {/* Saucer */}
+          <ellipse cx="40" cy="82" rx="30" ry="7" fill={dark ? "#3d3530" : "#e8d5b7"}/>
+          <ellipse cx="40" cy="81" rx="26" ry="5" fill={dark ? "#4a4238" : "#f0e0c8"}/>
+          <ellipse cx="40" cy="80" rx="22" ry="4" fill={dark ? "#524a40" : "#faf3e8"} opacity="0.6"/>
+          {/* Cup shadow */}
+          <ellipse cx="40" cy="44" rx="20" ry="6" fill="#000" opacity={dark ? "0.15" : "0.06"}/>
+          {/* Cup body */}
+          <path d="M16 44 Q14 78 40 78 Q66 78 64 44 Z" fill="url(#cupBody)"/>
+          <path d="M16 44 Q14 78 40 78 Q66 78 64 44 Z" stroke={dark ? "#c4b49a" : "#d4a96a"} strokeWidth="1.5" fill="none"/>
+          {/* Left highlight */}
+          <path d="M20 48 Q18 68 28 74 Q22 58 20 48 Z" fill="url(#cupShine)"/>
+          {/* Rim */}
+          <ellipse cx="40" cy="44" rx="24" ry="8" fill={dark ? "#e8dcc8" : "#f5e6cc"}/>
+          <ellipse cx="40" cy="44" rx="24" ry="8" stroke={dark ? "#c4b49a" : "#d4a96a"} strokeWidth="1" fill="none"/>
+          {/* Coffee surface */}
+          <ellipse cx="40" cy="44" rx="19" ry="6" fill="url(#coffeeLiquid)"/>
+          <ellipse cx="36" cy="42" rx="8" ry="2" fill="#fff" opacity={dark ? "0.12" : "0.2"}/>
+          {/* Handle */}
+          <path d="M62 50 Q78 48 78 60 Q78 72 62 70" stroke={dark ? "#d4c4a8" : "#d4a96a"} strokeWidth="4" fill="none" strokeLinecap="round"/>
+          <path d="M62 50 Q78 48 78 60 Q78 72 62 70" stroke={dark ? "#faf3e8" : "#f5e6cc"} strokeWidth="2" fill="none" strokeLinecap="round"/>
+          {/* Steam */}
+          <path d="M30 40 Q28 28 30 16" stroke={dark ? "#ffe8b0" : "#c8b89a"} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.85"
+            style={{ animation:"steam 2s ease-out infinite", transformOrigin:"30px 40px" }}/>
+          <path d="M40 38 Q38 24 40 12" stroke={dark ? "#ffe8b0" : "#c8b89a"} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.9"
+            style={{ animation:"steam 2s ease-out infinite 0.5s", transformOrigin:"40px 38px" }}/>
+          <path d="M50 40 Q48 26 50 14" stroke={dark ? "#ffe8b0" : "#c8b89a"} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.85"
+            style={{ animation:"steam 2s ease-out infinite 1s", transformOrigin:"50px 40px" }}/>
+        </svg>
+        </IllustGlow>
+
+        {/* Books stack */}
+        <IllustGlow dark={dark} className="float-a" style={{ position:"absolute", left:78, bottom:4, zIndex:2 }}>
+        <svg width="70" height="90" viewBox="0 0 70 90" fill="none">
+          {/* Book 3 (bottom) */}
+          <rect x="5" y="64" width="60" height="16" rx="3" fill={dark ? "#3a2e5a" : "#9b59b6"}/>
+          <rect x="5" y="64" width="60" height="5" rx="2" fill={dark ? "#4a3e6a" : "#b07cc6"}/>
+          <rect x="5" y="64" width="7" height="16" rx="1" fill={dark ? "#2e2448" : "#8e44ad"}/>
+          {/* Book 2 (middle) */}
+          <rect x="3" y="46" width="62" height="17" rx="3" fill={dark ? "#1a3a2e" : "#27ae60"}/>
+          <rect x="3" y="46" width="62" height="5" rx="2" fill={dark ? "#2a4a3e" : "#2ecc71"}/>
+          <rect x="3" y="46" width="7" height="17" rx="1" fill={dark ? "#143020" : "#219a52"}/>
+          {/* Book 1 (top) */}
+          <rect x="7" y="30" width="56" height="15" rx="3" fill={dark ? "#2e1a1a" : "#e74c3c"}/>
+          <rect x="7" y="30" width="56" height="5" rx="2" fill={dark ? "#3e2a2a" : "#ee6b6b"}/>
+          <rect x="7" y="30" width="7" height="15" rx="1" fill={dark ? "#241414" : "#c0392b"}/>
+          {/* Bookmark */}
+          <rect x="46" y="25" width="5" height="12" rx="1" fill={dark ? "#f0c040" : "#f39c12"}/>
+          <path d="M46 37 L48.5 34 L51 37" fill={dark ? "#1a3a2e" : "#27ae60"}/>
+          {/* Pencil on top */}
+          <rect x="15" y="22" width="40" height="7" rx="3" fill={dark ? "#e8d070" : "#f1c40f"} transform="rotate(-5 15 22)"/>
+          <path d="M13 26 L10 24 L14 21 Z" fill={dark ? "#d4a020" : "#e67e22"} transform="rotate(-5 13 26)"/>
+          <rect x="51" y="21" width="5" height="7" rx="1" fill={dark ? "#d44040" : "#e74c3c"} transform="rotate(-5 51 21)"/>
+        </svg>
+        </IllustGlow>
+
+        <SceneClock dark={dark}/>
+      </div>
+      )}
+
+      {isVictory ? (
+        <div style={{
+          maxWidth:400, margin: compact ? "0 auto" : "8px auto 0",
+          padding: compact ? "16px 18px" : "20px 22px",
+          borderRadius:12,
+          border: dark ? "1px solid #3d4a28" : "1px solid #ffd93d",
+          background: dark ? "rgba(45,58,30,0.55)" : "rgba(255,248,220,0.85)",
+        }}>
+          <p style={{
+            fontSize: compact ? 14.5 : 16, fontWeight:500, fontStyle:"italic",
+            color: dark ? "#e8e4dd" : "#1a1917", lineHeight:1.65, margin:0,
+          }}>
+            &ldquo;{VICTORY_QUOTE.text}&rdquo;
+          </p>
+          <p style={{
+            fontSize:12, fontWeight:700, letterSpacing:"0.04em",
+            color: dark ? "#c5e17a" : "#6b8e23", marginTop:12, marginBottom:0,
+          }}>
+            — {VICTORY_QUOTE.author}
+          </p>
+          <p style={{ fontSize:11, color: dark ? "#6b6660" : "#9a9590", marginTop:4 }}>
+            {VICTORY_QUOTE.source}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <h3 style={{ fontSize:17, fontWeight:700, color: dark ? "#e8e4dd" : "#1a1917", marginBottom:6 }}>
+            Bắt đầu ngày mới
+          </h3>
+          <p style={{ fontSize:13.5, color: dark ? "#6b6660" : "#6b6660", lineHeight:1.6 }}>
+            Thêm việc cần làm ở ô phía trên.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Demo Banner ── */
+function DemoBanner({ t }) {
+  const [closed, setClosed] = useState(false);
+  if (closed) return null;
+  return (
+    <div style={{
+      margin:"8px 24px 0", padding:"10px 14px",
+      background: t.aiBg, borderRadius:10,
+      border:`1px solid ${t.border}`, animation:"fadeSlide 0.2s ease",
+      display:"flex", alignItems:"flex-start", gap:10
+    }}>
+      <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>✨</span>
+      <div style={{ flex:1 }}>
+        <p style={{ fontSize:12.5, color: t.aiTxt, fontWeight:700, marginBottom:3 }}>Chế độ Demo AI</p>
+        <p style={{ fontSize:12, color: t.muted, lineHeight:1.5 }}>
+          Đây là gợi ý mẫu. Để dùng AI thật, thêm API Key từ{" "}
+          <a href="https://console.anthropic.com" target="_blank" style={{ color: t.aiTxt }}>console.anthropic.com</a>
+          {" "}(miễn phí $5 credit khi đăng ký).
+        </p>
+      </div>
+      <button onClick={() => setClosed(true)}
+        style={{ background:"none", border:"none", cursor:"pointer", color: t.muted, fontSize:16, lineHeight:1, flexShrink:0 }}>×</button>
+    </div>
+  );
+}
+
+/* ── Main App ── */
+function App() {
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem("focus_tasks_v3") || "[]");
+      return migrateTasks(raw);
+    } catch { return []; }
+  });
+  const [input, setInput]               = useState("");
+  const [filter, setFilter]             = useState("all");
+  const [aiState, setAiState]           = useState("hidden");
+  const [suggestions, setSuggestions]   = useState([]);
+  const [newIds, setNewIds]             = useState(new Set());
+  const [apiKey, setApiKey]             = useState(() => localStorage.getItem("focus_api_key") || "");
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [dark, setDark]                 = useState(() => localStorage.getItem("focus_dark") === "1");
+  const [isDemo, setIsDemo]             = useState(false);
+  const [victoryVisible, setVictoryVisible] = useState(false);
+  const [celebrateShow, setCelebrateShow] = useState(false);
+  const wasAllCompleteRef = useRef(false);
+  const celebrateMountedRef = useRef(false);
+  const inputRef = useRef(null);
+  const t = useTheme(dark);
+
+  const sorted = sortByOrder(tasks);
+  const active = sorted.filter(tk => !tk.done);
+  const done   = sorted.filter(tk => tk.done);
+  const allComplete = tasks.length > 0 && active.length === 0 && done.length > 0;
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    if (done.length > 0 && active.length === 0) setVictoryVisible(true);
+    if (done.length === 0) setVictoryVisible(false);
+  }, [done.length, active.length]);
+
+  useEffect(() => {
+    if (!celebrateMountedRef.current) {
+      celebrateMountedRef.current = true;
+      wasAllCompleteRef.current = allComplete;
+      return;
+    }
+    if (allComplete && !wasAllCompleteRef.current) {
+      setCelebrateShow(true);
+      const timer = setTimeout(() => setCelebrateShow(false), 3000);
+      wasAllCompleteRef.current = true;
+      return () => clearTimeout(timer);
+    }
+    if (!allComplete) {
+      wasAllCompleteRef.current = false;
+    }
+  }, [allComplete]);
+
+  useEffect(() => {
+    document.body.className = dark ? "dark" : "light";
+    localStorage.setItem("focus_dark", dark ? "1" : "0");
+  }, [dark]);
+
+  const pct    = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
+
+  function addTask(text, tag) {
+    const val = (text || input).trim();
+    if (!val) return;
+    const id = Date.now() + Math.random();
+    setTasks((prev) => {
+      const nextOrder = prev.length ? Math.max(...prev.map((tk) => tk.order)) + 1 : 1;
+      return [...prev, {
+        id,
+        order: nextOrder,
+        name: val,
+        priority: 0,
+        priorityUserSet: false,
+        notes: "",
+        done: false,
+        tag: tag || null,
+      }];
+    });
+    setNewIds((prev) => new Set([...prev, id]));
+    setTimeout(() => setNewIds((prev) => { const n = new Set(prev); n.delete(id); return n; }), 400);
+    if (!text) setInput("");
+  }
+  function updateTask(id, patch) {
+    const { priority, priorityUserSet, ...safe } = patch;
+    setTasks((prev) => prev.map((tk) => (tk.id === id ? { ...tk, ...safe } : tk)));
+  }
+  function setTaskPriority(id, priority) {
+    const p = Math.min(5, Math.max(0, priority));
+    setTasks((prev) => prev.map((tk) => (tk.id === id ? {
+      ...tk,
+      priority: p,
+      priorityUserSet: p > 0,
+    } : tk)));
+  }
+  function toggleTask(id) {
+    setTasks((prev) => prev.map((tk) => (tk.id === id ? { ...tk, done: !tk.done } : tk)));
+  }
+  function deleteTask(id) {
+    setTasks((prev) => {
+      const next = prev.filter((tk) => tk.id !== id);
+      return sortByOrder(next).map((tk, i) => ({ ...tk, order: i + 1 }));
+    });
+  }
+
+  async function askAI() {
+    const task = input.trim();
+    if (!task) { inputRef.current?.focus(); return; }
+
+    setAiState("loading");
+    setSuggestions([]);
+    setIsDemo(false);
+
+    if (!apiKey) {
+      // Demo mode
+      await new Promise(r => setTimeout(r, 900));
+      setSuggestions(getDemoSuggestions(task));
+      setAiState("done");
+      setIsDemo(true);
+      return;
+    }
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-calls": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 800,
+          system: "Bạn là trợ lý quản lý công việc. Chia mục tiêu thành 4-6 việc nhỏ cụ thể có thể hành động ngay. Trả lời CHỈ bằng JSON array các string ngắn gọn, không markdown, không giải thích.",
+          messages: [{ role: "user", content: task }]
+        })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const textBlock = data.content?.find(b => b.type === "text");
+      const raw = textBlock?.text || "[]";
+      const items = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      if (!Array.isArray(items) || !items.length) throw new Error("empty");
+      setSuggestions(items);
+      setAiState("done");
+    } catch(e) {
+      console.error(e);
+      setAiState("error");
+    }
+  }
+
+  function saveApiKey(key) {
+    localStorage.setItem("focus_api_key", key);
+    setApiKey(key);
+    setShowKeyInput(false);
+  }
+  function addAll() { suggestions.forEach(s => addTask(s, "AI")); }
+
+  const mainItems = filter === "all"
+    ? [...active, ...done]
+    : filter === "done"
+      ? done
+      : active;
+  const sectionLabel = filter === "done"
+    ? "Đã xong"
+    : filter === "all"
+      ? "Tất cả"
+      : "Chưa xong";
+  const sectionCount = filter === "done"
+    ? done.length
+    : filter === "all"
+      ? tasks.length
+      : active.length;
+
+  return (
+    <React.Fragment>
+    {celebrateShow && <Fireworks active={celebrateShow} dark={dark}/>}
+    {celebrateShow && <CelebrationBanner dark={dark}/>}
+    <div style={{
+      fontFamily:"'Plus Jakarta Sans',sans-serif",
+      width:"100%", maxWidth:720, minHeight:"100vh",
+      padding:5,
+      borderRadius:22,
+      border:`1px solid ${t.frameOuter}`,
+      background:t.frameRing,
+      boxShadow: dark
+        ? "0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)"
+        : "0 12px 40px rgba(26,25,23,0.08), 0 0 0 1px rgba(255,255,255,0.8)",
+      transition:"background 0.3s, box-shadow 0.3s"
+    }}>
+    <div style={{
+      width:"100%", minHeight:"calc(100vh - 10px)",
+      borderRadius:16,
+      border:`1px solid ${t.frameInner}`,
+      backgroundColor:t.bg,
+      ...t.noteGrid,
+      display:"flex", flexDirection:"column",
+      overflow:"hidden",
+      transition:"background-color 0.3s, border-color 0.3s"
+    }}>
+
+      {/* ── Header ── */}
+      <div style={{ display:"flex", alignItems:"center", padding:"24px 24px 0", gap:10 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:22, fontWeight:700, color: t.text, letterSpacing:"-0.02em" }}>Hôm nay</div>
+          <div style={{ fontSize:12, color: t.faintTxt, marginTop:1 }}>{todayLabel()}</div>
+        </div>
+        <DarkToggle dark={dark} onToggle={() => setDark(d => !d)}/>
+        <button onClick={() => setShowKeyInput(v => !v)} title="Cài đặt API Key"
+          style={{
+            background: apiKey ? t.greenBg : t.warnBg,
+            border:"none", borderRadius:8, padding:"6px 10px",
+            cursor:"pointer", fontSize:12, fontWeight:600,
+            color: apiKey ? "#30a46c" : "#e8643a",
+            display:"flex", alignItems:"center", gap:5
+          }}>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+            <circle cx="5.5" cy="5.5" r="3.5" stroke="currentColor" strokeWidth="1.4"/>
+            <path d="M8 8l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          {apiKey ? "API ✓" : "API Key"}
+        </button>
+        <ProgressRing pct={pct} dark={dark}/>
+      </div>
+
+      {/* ── API Key Input ── */}
+      {showKeyInput && (
+        <div style={{
+          margin:"12px 24px 0", padding:14,
+          background: t.warnBg, borderRadius:10,
+          border:`1px solid ${t.warnBorder}`, animation:"fadeSlide 0.2s ease"
+        }}>
+          <p style={{ fontSize:12, color: t.warnTxt, marginBottom:8, lineHeight:1.5 }}>
+            Nhập <strong>Anthropic API Key</strong> để dùng AI thật.<br/>
+            Lấy key tại <a href="https://console.anthropic.com" target="_blank" style={{ color:"#e8643a" }}>console.anthropic.com</a>
+            {" "}— có <strong>$5 credit miễn phí</strong> khi đăng ký.
+          </p>
+          <div style={{ display:"flex", gap:8 }}>
+            <input type="password" placeholder="sk-ant-..."
+              defaultValue={apiKey}
+              id="apiKeyInput"
+              style={{
+                flex:1, padding:"8px 12px", border:`1px solid ${t.warnBorder}`,
+                borderRadius:7, outline:"none", fontFamily:"monospace",
+                fontSize:13, background: t.bg, color: t.text
+              }}/>
+            <button onClick={() => saveApiKey(document.getElementById("apiKeyInput").value.trim())}
+              style={{
+                background:"#e8643a", color:"#fff", border:"none",
+                borderRadius:7, padding:"8px 14px", cursor:"pointer",
+                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:13
+              }}>Lưu</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Filter tabs ── */}
+      <div style={{ display:"flex", gap:4, padding:"16px 24px 0" }}>
+        {[["all","Tất cả"],["active","Chưa xong"],["done","Đã xong"]].map(([f,label]) => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{
+              fontSize:13, fontWeight:600, padding:"6px 14px", borderRadius:20,
+              border:"none", cursor:"pointer", transition:"all 0.15s",
+              background: filter===f ? (dark ? "#e8e4dd" : "#1a1917") : "transparent",
+              color: filter===f ? (dark ? "#1a1917" : "#fff") : t.muted
+            }}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── Quick add ── */}
+      <div style={{
+        margin:"16px 24px 0", background: t.inputBg,
+        border:`1.5px solid ${input ? "#e8643a" : t.border}`,
+        boxShadow: input ? "0 0 0 3px rgba(232,100,58,0.10)" : "none",
+        borderRadius:12, display:"flex", alignItems:"center",
+        overflow:"hidden", transition:"border-color 0.15s, box-shadow 0.15s"
+      }}>
+        <span style={{ padding:"0 12px 0 16px", color: t.faintTxt, display:"flex", alignItems:"center", flexShrink:0 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 5v6M5 8h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </span>
+        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && addTask()}
+          placeholder="Thêm công việc… hoặc mô tả dự án cho AI"
+          style={{
+            flex:1, background:"none", border:"none", outline:"none",
+            fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14.5,
+            color: t.text, padding:"13px 0", caretColor:"#e8643a"
+          }}/>
+        <div style={{ display:"flex", alignItems:"center", paddingRight:8, gap:4 }}>
+          <button onClick={askAI} disabled={aiState === "loading"}
+            style={{
+              display:"flex", alignItems:"center", gap:5,
+              fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:600,
+              color:"#4f8ef7", background: t.aiBg, border:"none",
+              borderRadius:6, padding:"6px 10px", cursor:"pointer",
+              whiteSpace:"nowrap", opacity: aiState === "loading" ? 0.45 : 1
+            }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1l1.2 3.3L11 5l-3.3 1.2L6.5 10 5.3 6.2 1 5l4.3-1.2z" fill="currentColor"/>
+            </svg>
+            AI
+          </button>
+          <button onClick={() => addTask()}
+            style={{
+              fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, fontWeight:700,
+              color:"#fff", background:"#e8643a", border:"none",
+              borderRadius:6, padding:"7px 14px", cursor:"pointer"
+            }}>Thêm</button>
+        </div>
+      </div>
+
+      {/* ── AI Panel ── */}
+      {aiState !== "hidden" && (
+        <div style={{
+          margin:"12px 24px 0", border:`1.5px solid ${t.border}`,
+          borderRadius:12, overflow:"hidden", animation:"fadeSlide 0.2s ease"
+        }}>
+          <div style={{
+            display:"flex", alignItems:"center", justifyContent:"space-between",
+            padding:"12px 16px", background: t.aiBg, borderBottom:`1px solid ${t.border}`
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12, fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"#4f8ef7" }}>
+              {aiState === "loading"
+                ? <div style={{ width:14, height:14, border:"2px solid rgba(79,142,247,0.2)", borderTopColor:"#4f8ef7", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+                : <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 1l1.2 3.3L11 5l-3.3 1.2L6.5 10 5.3 6.2 1 5l4.3-1.2z" fill="#4f8ef7"/></svg>
+              }
+              {aiState === "loading" ? "AI đang phân tích…" : aiState === "error" ? "Lỗi" : isDemo ? "Gợi ý Demo" : "Gợi ý từ AI"}
+            </div>
+            <button onClick={() => setAiState("hidden")}
+              style={{ background:"none", border:"none", cursor:"pointer", color: t.faintTxt, fontSize:18, lineHeight:1 }}>×</button>
+          </div>
+
+          {(isDemo && aiState === "done") ? <DemoBanner t={t}/> : null}
+
+          <div style={{ padding:"12px 14px", background: t.bg }}>
+            {aiState === "loading" && (
+              <div style={{ fontSize:13, color: t.muted, display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{ width:14, height:14, border:`2px solid ${t.border}`, borderTopColor: t.muted, borderRadius:"50%", animation:"spin 0.7s linear infinite", flexShrink:0 }}/>
+                Đang tạo gợi ý…
+              </div>
+            )}
+            {aiState === "error" && (
+              <p style={{ fontSize:13, color:"#e8643a" }}>Không thể tạo gợi ý. Kiểm tra lại API Key và thử lại.</p>
+            )}
+            {aiState === "done" && (
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                {suggestions.map((s, i) => (
+                  <SuggestionRow key={i} text={s} onAdd={tk => addTask(tk, "AI")} t={t}/>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {aiState === "done" && (
+            <div style={{
+              display:"flex", justifyContent:"space-between", alignItems:"center",
+              padding:"10px 14px", borderTop:`1px solid ${t.border}`, background: t.surface
+            }}>
+              <span style={{ fontSize:12, color: t.faintTxt }}>{suggestions.length} gợi ý</span>
+              <button onClick={addAll}
+                style={{
+                  fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:700,
+                  color:"#fff", background:"#4f8ef7", border:"none",
+                  borderRadius:6, padding:"7px 14px", cursor:"pointer"
+                }}>Thêm tất cả</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Section label ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 24px 8px" }}>
+        <span style={{ fontSize:11, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color: t.faintTxt }}>
+          {sectionLabel}
+        </span>
+        <span style={{ fontSize:12, fontWeight:600, color: t.faintTxt, background: t.pill, padding:"2px 8px", borderRadius:10 }}>
+          {sectionCount}
+        </span>
+      </div>
+
+      <FilterHint
+        filter={filter} t={t} dark={dark}
+        show={filter === "active" || (filter === "done" && done.length > 0)}
+      />
+
+      {/* ── Task table ── */}
+      <div style={{ margin:"0 12px 8px", flex:1, padding:4, borderRadius:14, border:`1px solid ${t.listBorder}`, background:t.listInner }}>
+        <div className="task-table-wrap" style={{
+          borderRadius:10, border:`1px solid ${t.frameInner}`,
+          backgroundColor: dark ? "rgba(28,28,26,0.5)" : "rgba(255,255,255,0.65)",
+          minHeight: mainItems.length ? 0 : 120,
+        }}>
+          <table className="task-table">
+            <thead>
+              <tr style={{ color: t.faintTxt }}>
+                <th style={{ width:40, textAlign:"center" }}>STT</th>
+                <th>Tên hoạt động</th>
+                <th style={{ width:108, textAlign:"center" }}>Ưu tiên</th>
+                <th>Ghi chú</th>
+                <th style={{ width:52, textAlign:"center" }}>Xong</th>
+                <th style={{ width:36 }} aria-label="Xóa"/>
+              </tr>
+            </thead>
+            <tbody>
+              {mainItems.map((task, i) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  stt={task.order}
+                  onToggle={toggleTask}
+                  onUpdate={updateTask}
+                  onSetPriority={setTaskPriority}
+                  onDelete={deleteTask}
+                  animating={newIds.has(task.id)}
+                  t={t}
+                  dark={dark}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Victory quote (stays after adding new tasks) ── */}
+      {victoryVisible && done.length > 0 && filter !== "done" && (
+        <EmptyIllustration
+          dark={dark}
+          variant="victory"
+          compact={active.length > 0}
+        />
+      )}
+
+      {/* ── Active tab: cleared queue (hint banner already shown above) ── */}
+      {filter === "active" && active.length === 0 && done.length > 0 && (
+        <p style={{ textAlign:"center", fontSize:13, color: t.muted, padding:"8px 24px 24px", lineHeight:1.6 }}>
+          Thêm việc mới ở ô phía trên khi bạn sẵn sàng tiếp tục.
+        </p>
+      )}
+
+      {/* ── Empty start (tất cả, chưa có task) ── */}
+      {tasks.length === 0 && filter === "all" && (
+        <EmptyIllustration dark={dark} variant="empty" compact={false}/>
+      )}
+
+      {/* ── Empty: đã xong tab ── */}
+      {filter === "done" && done.length === 0 && (
+        <div style={{ textAlign:"center", padding:"32px 24px 40px" }}>
+          <p style={{ fontSize:15, fontWeight:600, color: t.text, marginBottom:8 }}>Chưa có việc hoàn thành</p>
+          <p style={{ fontSize:13, color: t.muted, lineHeight:1.6, maxWidth:320, margin:"0 auto" }}>
+            Tick xong việc ở tab Chưa xong hoặc Tất cả — lời chúc mừng sẽ hiện ở đây.
+          </p>
+        </div>
+      )}
+
+      <div style={{ height:40 }}/>
+    </div>
+    </div>
+    </React.Fragment>
+  );
+}
+
+const rootEl = document.getElementById("root");
+const appEl = React.createElement(App);
+if (ReactDOM.createRoot) {
+  ReactDOM.createRoot(rootEl).render(appEl);
+} else {
+  ReactDOM.render(appEl, rootEl);
+}
+</script>
+</body>
+</html>
