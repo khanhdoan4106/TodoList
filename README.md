@@ -1,6 +1,6 @@
-# Focus
+# TodoList
 
-Focus là ứng dụng quản lý công việc cá nhân với giao diện tối giản, giúp người dùng theo dõi tiến độ hằng ngày, sắp xếp mức độ ưu tiên và duy trì sự tập trung.
+TodoList là ứng dụng quản lý công việc cá nhân với giao diện tối giản, giúp người dùng theo dõi tiến độ hằng ngày, sắp xếp mức độ ưu tiên và duy trì sự tập trung.
 
 ## Features
 
