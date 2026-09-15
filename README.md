@@ -22,10 +22,5 @@ TodoList là ứng dụng quản lý công việc cá nhân với giao diện t�
 
 ## Installation
 
-```bash
-git clone <repository-url>
-cd focus
-```
-
 Mở file `index.html` bằng trình duyệt hoặc chạy thông qua một local server.
 
