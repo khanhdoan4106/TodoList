@@ -3,6 +3,31 @@
 // File này phải được load TRƯỚC mọi component vì chúng dùng các hàm/hằng số ở đây.
 
 const STORAGE_KEY = "focus_tasks_v4";
+const AI_MODEL = "claude-sonnet-5-5";
+
+// Lấy JSON array các string từ câu trả lời của AI, chịu được markdown fence hoặc chữ thừa.
+function parseSuggestions(raw) {
+  const text = String(raw || "").replace(/```(?:json)?/g, "");
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end <= start) return [];
+  let items;
+  try { items = JSON.parse(text.slice(start, end + 1)); } catch { return []; }
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((it) => (typeof it === "string" ? it : it?.text ?? it?.title ?? ""))
+    .map((it) => String(it).trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function describeApiError(status, message) {
+  if (status === 401) return "API Key không hợp lệ. Kiểm tra lại key trong mục API Key.";
+  if (status === 403) return "API Key không có quyền dùng model này.";
+  if (status === 429) return "Gửi quá nhiều yêu cầu. Đợi một lát rồi thử lại.";
+  if (status === 529 || status >= 500) return "Máy chủ AI đang quá tải. Thử lại sau ít phút.";
+  return message ? `Lỗi ${status}: ${message}` : `Lỗi ${status}. Thử lại sau.`;
+}
 
 function migrateTasks(raw) {
   if (!Array.isArray(raw)) return [];

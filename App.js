@@ -18,6 +18,8 @@ function App() {
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [dark, setDark]                 = useState(() => localStorage.getItem("focus_dark") === "1");
   const [isDemo, setIsDemo]             = useState(false);
+  const [aiError, setAiError]           = useState("");
+  const [addedSuggestions, setAddedSuggestions] = useState(new Set());
   const [victoryVisible, setVictoryVisible] = useState(false);
   const [celebrateShow, setCelebrateShow] = useState(false);
   const wasAllCompleteRef = useRef(false);
@@ -112,6 +114,8 @@ function App() {
 
     setAiState("loading");
     setSuggestions([]);
+    setAddedSuggestions(new Set());
+    setAiError("");
     setIsDemo(false);
 
     if (!apiKey) {
@@ -133,22 +137,26 @@ function App() {
           "anthropic-dangerous-direct-browser-calls": "true"
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: AI_MODEL,
           max_tokens: 800,
           system: "Bạn là trợ lý quản lý công việc. Chia mục tiêu thành 4-6 việc nhỏ cụ thể có thể hành động ngay. Trả lời CHỈ bằng JSON array các string ngắn gọn, không markdown, không giải thích.",
           messages: [{ role: "user", content: task }]
         })
       });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(describeApiError(res.status, data?.error?.message));
+      }
       const textBlock = data.content?.find(b => b.type === "text");
-      const raw = textBlock?.text || "[]";
-      const items = JSON.parse(raw.replace(/```json|```/g, "").trim());
-      if (!Array.isArray(items) || !items.length) throw new Error("empty");
+      const items = parseSuggestions(textBlock?.text || "");
+      if (!items.length) throw new Error("AI không trả về gợi ý hợp lệ. Thử diễn đạt lại mục tiêu.");
       setSuggestions(items);
       setAiState("done");
     } catch(e) {
       console.error(e);
+      setAiError(e instanceof TypeError
+        ? "Không kết nối được tới API. Kiểm tra mạng và thử lại."
+        : e.message);
       setAiState("error");
     }
   }
@@ -158,7 +166,16 @@ function App() {
     setApiKey(key);
     setShowKeyInput(false);
   }
-  function addAll() { suggestions.forEach(s => addTask(s, "AI")); }
+  function addSuggestion(index) {
+    if (addedSuggestions.has(index)) return;
+    addTask(suggestions[index], "AI");
+    setAddedSuggestions(prev => new Set(prev).add(index));
+  }
+  function addAll() {
+    suggestions.forEach((s, i) => { if (!addedSuggestions.has(i)) addTask(s, "AI"); });
+    setAddedSuggestions(new Set(suggestions.map((_, i) => i)));
+  }
+  const allSuggestionsAdded = suggestions.length > 0 && addedSuggestions.size >= suggestions.length;
 
   const mainItems = filter === "all"
     ? [...active, ...done]
@@ -178,7 +195,7 @@ function App() {
 
   return (
     <React.Fragment>
-    {celebrateShow && <Fireworks active={celebrateShow} dark={dark}/>}
+    {celebrateShow && <Fireworks active={celebrateShow}/>}
     {celebrateShow && <CelebrationBanner dark={dark}/>}
     <div style={{
       fontFamily:"'Plus Jakarta Sans',sans-serif",
@@ -236,13 +253,14 @@ function App() {
         }}>
           <p style={{ fontSize:12, color: t.warnTxt, marginBottom:8, lineHeight:1.5 }}>
             Nhập <strong>Anthropic API Key</strong> để dùng AI thật.<br/>
-            Lấy key tại <a href="https://console.anthropic.com" target="_blank" style={{ color:"#e8643a" }}>console.anthropic.com</a>
-            {" "}— có <strong>$5 credit miễn phí</strong> khi đăng ký.
+            Lấy key tại <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color:"#e8643a" }}>console.anthropic.com</a>.
+            {" "}Key chỉ lưu trong trình duyệt này. Để trống rồi bấm Lưu để quay về chế độ Demo.
           </p>
           <div style={{ display:"flex", gap:8 }}>
             <input type="password" placeholder="sk-ant-..."
               defaultValue={apiKey}
               id="apiKeyInput"
+              onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) saveApiKey(e.currentTarget.value.trim()); }}
               style={{
                 flex:1, padding:"8px 12px", border:`1px solid ${t.warnBorder}`,
                 borderRadius:7, outline:"none", fontFamily:"monospace",
@@ -286,7 +304,7 @@ function App() {
           </svg>
         </span>
         <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && addTask()}
+          onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) addTask(); }}
           placeholder="Thêm công việc… hoặc mô tả dự án cho AI"
           style={{
             flex:1, background:"none", border:"none", outline:"none",
@@ -347,12 +365,12 @@ function App() {
               </div>
             )}
             {aiState === "error" && (
-              <p style={{ fontSize:13, color:"#e8643a" }}>Không thể tạo gợi ý. Kiểm tra lại API Key và thử lại.</p>
+              <p style={{ fontSize:13, color:"#e8643a" }}>{aiError || "Không thể tạo gợi ý. Thử lại sau."}</p>
             )}
             {aiState === "done" && (
               <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                 {suggestions.map((s, i) => (
-                  <SuggestionRow key={i} text={s} onAdd={tk => addTask(tk, "AI")} t={t}/>
+                  <SuggestionRow key={i} text={s} added={addedSuggestions.has(i)} onAdd={() => addSuggestion(i)} t={t}/>
                 ))}
               </div>
             )}
@@ -364,12 +382,12 @@ function App() {
               padding:"10px 14px", borderTop:`1px solid ${t.border}`, background: t.surface
             }}>
               <span style={{ fontSize:12, color: t.faintTxt }}>{suggestions.length} gợi ý</span>
-              <button onClick={addAll}
+              <button onClick={addAll} disabled={allSuggestionsAdded}
                 style={{
                   fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:700,
-                  color:"#fff", background:"#4f8ef7", border:"none",
-                  borderRadius:6, padding:"7px 14px", cursor:"pointer"
-                }}>Thêm tất cả</button>
+                  color:"#fff", background: allSuggestionsAdded ? "#30a46c" : "#4f8ef7", border:"none",
+                  borderRadius:6, padding:"7px 14px", cursor: allSuggestionsAdded ? "default" : "pointer"
+                }}>{allSuggestionsAdded ? "✓ Đã thêm hết" : "Thêm tất cả"}</button>
             </div>
           )}
         </div>

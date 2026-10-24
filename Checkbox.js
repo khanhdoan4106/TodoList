@@ -2,7 +2,7 @@
 function Checkbox({ checked, onChange }) {
   return (
     <label style={{ position:"relative", flexShrink:0, marginTop:1, cursor:"pointer" }}>
-      <input type="checkbox" checked={checked} onChange={onChange}
+      <input type="checkbox" checked={checked} onChange={onChange} aria-label="Đánh dấu hoàn thành"
         style={{ position:"absolute", opacity:0, width:20, height:20, cursor:"pointer", margin:0 }}/>
       <span style={{
         width:20, height:20, borderRadius:"50%",
