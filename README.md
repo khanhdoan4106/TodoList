@@ -22,6 +22,27 @@ TodoList là ứng dụng quản lý công việc cá nhân với giao diện t�
 * HTML5, CSS3
 * Anthropic Messages API
 
+## Cấu trúc thư mục
+
+```
+TodoList/
+├── index.html            # Trang chính, nạp thư viện và các script theo thứ tự phụ thuộc
+├── README.md
+└── src/
+    ├── App.js            # Component gốc — nạp sau cùng
+    ├── utils.js          # Hằng số, hàm thuần, gọi/parse AI
+    ├── theme.js          # Bảng màu sáng/tối (useTheme)
+    ├── styles.css        # CSS toàn cục, animation
+    └── components/       # Các component giao diện
+        ├── TaskRow.js, Checkbox.js, StarRating.js
+        ├── SuggestionRow.js, DemoBanner.js, FilterHint.js
+        ├── ProgressRing.js, DarkToggle.js
+        ├── EmptyIllustration.js, IllustGlow.js, SceneClock.js
+        └── Fireworks.js, CelebrationBanner.js
+```
+
+Không dùng bundler nên các file chia sẻ hàm/component qua phạm vi toàn cục. Khi thêm component mới, thêm thẻ `<script>` tương ứng vào `index.html` **trước** các file dùng nó.
+
 ## Chạy ứng dụng
 
 Các file `.js` được Babel tải bằng XHR, nên **mở trực tiếp `index.html` (file://) sẽ không chạy**. Hãy dùng một local server:
