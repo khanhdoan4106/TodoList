@@ -1,5 +1,5 @@
 // src/components/Fireworks.js
-function Fireworks({ active, dark }) {
+function Fireworks({ active }) {
   const canvasRef = React.useRef(null);
   const stateRef = React.useRef({ particles: [], rockets: [], frame: 0 });
 
@@ -46,12 +46,13 @@ function Fireworks({ active, dark }) {
     }
 
     let animId;
-    const fade = dark ? "rgba(17,17,16,0.18)" : "rgba(247,246,243,0.2)";
+    // Xoá dần vệt pháo về trong suốt — không phủ màu nền lên toàn bộ app.
+    const fade = "rgba(0,0,0,0.18)";
 
     const loop = () => {
       const st = stateRef.current;
       st.frame++;
-      ctx.globalCompositeOperation = "source-over";
+      ctx.globalCompositeOperation = "destination-out";
       ctx.fillStyle = fade;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = "lighter";
@@ -105,7 +106,7 @@ function Fireworks({ active, dark }) {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
-  }, [active, dark]);
+  }, [active]);
 
   if (!active) return null;
   return <canvas ref={canvasRef} className="fireworks-canvas" aria-hidden="true"/>;

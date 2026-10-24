@@ -1,6 +1,6 @@
 // src/components/SuggestionRow.js
-function SuggestionRow({ text, onAdd, t }) {
-  const [added, setAdded] = React.useState(false);
+// Trạng thái "đã thêm" do App quản lý để đồng bộ với nút "Thêm tất cả".
+function SuggestionRow({ text, added, onAdd, t }) {
   const [hovered, setHovered] = React.useState(false);
   return (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
@@ -12,7 +12,7 @@ function SuggestionRow({ text, onAdd, t }) {
       }}>
       <div style={{ width:6, height:6, borderRadius:"50%", background:"#4f8ef7", flexShrink:0 }}/>
       <span style={{ flex:1, fontSize:13.5, color: t.muted }}>{text}</span>
-      <button onClick={() => { if (!added) { onAdd(text); setAdded(true); } }}
+      <button onClick={() => { if (!added) onAdd(); }} disabled={added}
         style={{
           fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:11, fontWeight:700,
           color: added ? "#30a46c" : "#4f8ef7",

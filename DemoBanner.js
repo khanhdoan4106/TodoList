@@ -14,8 +14,7 @@ function DemoBanner({ t }) {
         <p style={{ fontSize:12.5, color: t.aiTxt, fontWeight:700, marginBottom:3 }}>Chế độ Demo AI</p>
         <p style={{ fontSize:12, color: t.muted, lineHeight:1.5 }}>
           Đây là gợi ý mẫu. Để dùng AI thật, thêm API Key từ{" "}
-          <a href="https://console.anthropic.com" target="_blank" style={{ color: t.aiTxt }}>console.anthropic.com</a>
-          {" "}(miễn phí $5 credit khi đăng ký).
+          <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color: t.aiTxt }}>console.anthropic.com</a>.
         </p>
       </div>
       <button onClick={() => setClosed(true)}
