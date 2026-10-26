@@ -1,10 +1,10 @@
 // src/components/CelebrationBanner.js
-function CelebrationBanner({ dark }) {
+function CelebrationBanner() {
   return (
-    <div className={`celebration-banner ${dark ? "dark" : "light"}`} role="status" aria-live="polite">
+    <div className="celebration-banner" role="status" aria-live="polite">
       <p className="celebration-title">Chúc mừng!</p>
-      <p className="celebration-sub">Bạn đã hoàn thành tất cả công việc.</p>
-      <p className="celebration-rest">Hãy nghỉ ngơi đầy đủ nhé.</p>
+      <p className="celebration-sub">Bạn đã xong tất cả việc hôm nay.</p>
+      <p className="celebration-rest">Nghỉ ngơi một chút nhé.</p>
     </div>
   );
 }

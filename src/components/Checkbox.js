@@ -1,19 +1,21 @@
 // src/components/Checkbox.js
-function Checkbox({ checked, onChange }) {
+// Ô vuông như ô đánh dấu trên giấy; tick xong thì tô mực.
+function Checkbox({ checked, onChange, label, t }) {
   return (
-    <label style={{ position:"relative", flexShrink:0, marginTop:1, cursor:"pointer" }}>
-      <input type="checkbox" checked={checked} onChange={onChange} aria-label="Đánh dấu hoàn thành"
-        style={{ position:"absolute", opacity:0, width:20, height:20, cursor:"pointer", margin:0 }}/>
-      <span style={{
-        width:20, height:20, borderRadius:"50%",
-        border: checked ? "1.8px solid #9acd32" : "1.8px solid #d5d0c8",
-        background: checked ? "#9acd32" : "transparent",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        transition:"all 0.18s cubic-bezier(.4,0,.2,1)", pointerEvents:"none"
+    <label style={{ position: "relative", display: "block", width: 22, height: 22, cursor: "pointer" }}>
+      <input type="checkbox" checked={checked} onChange={onChange}
+        aria-label={checked ? `Bỏ đánh dấu xong: ${label}` : `Đánh dấu xong: ${label}`}
+        style={{ position: "absolute", inset: 0, opacity: 0, margin: 0, cursor: "pointer" }}/>
+      <span aria-hidden="true" style={{
+        width: 22, height: 22, borderRadius: 4,
+        border: `2px solid ${checked ? t.ink : t.faint}`,
+        background: checked ? t.ink : "transparent",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "background 0.15s, border-color 0.15s", pointerEvents: "none",
       }}>
         {checked && (
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="12" height="10" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l3 3 5-6" stroke={t.paper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         )}
       </span>

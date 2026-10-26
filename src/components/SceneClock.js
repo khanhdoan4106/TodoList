@@ -47,7 +47,7 @@ function SceneClock({ dark }) {
         style={{
           fontSize: 17, fontWeight: 700, letterSpacing: "0.06em", lineHeight: 1.1,
           color: dark ? "#ffe8b0" : "#5c4030",
-          fontFamily: "'Plus Jakarta Sans', monospace",
+          fontFamily: "'Barlow', sans-serif",
         }}
       >
         {now.time}

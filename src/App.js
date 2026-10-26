@@ -58,12 +58,15 @@ function App() {
     }
   }, [allComplete]);
 
+  // Đưa bảng màu lên :root để CSS (styles.css) và các component dùng chung
   useEffect(() => {
+    const root = document.documentElement;
+    Object.entries(t).forEach(([key, value]) => root.style.setProperty(`--${key}`, value));
+    root.style.colorScheme = dark ? "dark" : "light";
     document.body.className = dark ? "dark" : "light";
     localStorage.setItem("focus_dark", dark ? "1" : "0");
   }, [dark]);
 
-  const pct    = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
 
   function addTask(text, tag) {
     const val = (text || input).trim();
@@ -182,304 +185,179 @@ function App() {
     : filter === "done"
       ? done
       : active;
-  const sectionLabel = filter === "done"
-    ? "Đã xong"
-    : filter === "all"
-      ? "Tất cả"
-      : "Chưa xong";
-  const sectionCount = filter === "done"
-    ? done.length
-    : filter === "all"
-      ? tasks.length
-      : active.length;
+  const FILTERS = [["all", "Tất cả", tasks.length], ["active", "Chưa xong", active.length], ["done", "Đã xong", done.length]];
+  const pad = "0 28px";
+
+  const headerActions = (
+    <React.Fragment>
+      <button type="button" className="btn" onClick={() => setShowKeyInput(v => !v)}
+        aria-expanded={showKeyInput}
+        title={apiKey ? "Đã có API key, bấm để đổi" : "Chưa có API key, AI đang chạy chế độ mẫu"}
+        style={{ height: 32, padding: "0 10px", fontSize: 13, color: t.muted }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="8" cy="15" r="4" stroke="currentColor" strokeWidth="2"/>
+          <path d="M11 12l8-8M16 7l3 3M14 9l2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        {apiKey ? "AI đã kết nối" : "AI chế độ mẫu"}
+      </button>
+      <DarkToggle dark={dark} onToggle={() => setDark(d => !d)}/>
+    </React.Fragment>
+  );
 
   return (
     <React.Fragment>
     {celebrateShow && <Fireworks active={celebrateShow}/>}
-    {celebrateShow && <CelebrationBanner dark={dark}/>}
-    <div style={{
-      fontFamily:"'Plus Jakarta Sans',sans-serif",
-      width:"100%", maxWidth:720, minHeight:"100vh",
-      padding:5,
-      borderRadius:22,
-      border:`1px solid ${t.frameOuter}`,
-      background:t.frameRing,
-      boxShadow: dark
-        ? "0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)"
-        : "0 12px 40px rgba(26,25,23,0.08), 0 0 0 1px rgba(255,255,255,0.8)",
-      transition:"background 0.3s, box-shadow 0.3s"
-    }}>
-    <div style={{
-      width:"100%", minHeight:"calc(100vh - 10px)",
-      borderRadius:16,
-      border:`1px solid ${t.frameInner}`,
-      backgroundColor:t.bg,
-      ...t.noteGrid,
-      display:"flex", flexDirection:"column",
-      overflow:"hidden",
-      transition:"background-color 0.3s, border-color 0.3s"
-    }}>
+    {celebrateShow && <CelebrationBanner/>}
+    <main className="sheet">
+      <CalendarSheet doneCount={done.length} total={tasks.length} actions={headerActions} t={t}/>
 
-      {/* ── Header ── */}
-      <div style={{ display:"flex", alignItems:"center", padding:"24px 24px 0", gap:10 }}>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:22, fontWeight:700, color: t.text, letterSpacing:"-0.02em" }}>Hôm nay</div>
-          <div style={{ fontSize:12, color: t.faintTxt, marginTop:1 }}>{todayLabel()}</div>
-        </div>
-        <DarkToggle dark={dark} onToggle={() => setDark(d => !d)}/>
-        <button onClick={() => setShowKeyInput(v => !v)} title="Cài đặt API Key"
-          style={{
-            background: apiKey ? t.greenBg : t.warnBg,
-            border:"none", borderRadius:8, padding:"6px 10px",
-            cursor:"pointer", fontSize:12, fontWeight:600,
-            color: apiKey ? "#30a46c" : "#e8643a",
-            display:"flex", alignItems:"center", gap:5
-          }}>
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-            <circle cx="5.5" cy="5.5" r="3.5" stroke="currentColor" strokeWidth="1.4"/>
-            <path d="M8 8l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          </svg>
-          {apiKey ? "API ✓" : "API Key"}
-        </button>
-        <ProgressRing pct={pct} dark={dark}/>
-      </div>
-
-      {/* ── API Key Input ── */}
+      {/* ── API key ── */}
       {showKeyInput && (
-        <div style={{
-          margin:"12px 24px 0", padding:14,
-          background: t.warnBg, borderRadius:10,
-          border:`1px solid ${t.warnBorder}`, animation:"fadeSlide 0.2s ease"
-        }}>
-          <p style={{ fontSize:12, color: t.warnTxt, marginBottom:8, lineHeight:1.5 }}>
-            Nhập <strong>Anthropic API Key</strong> để dùng AI thật.<br/>
-            Lấy key tại <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color:"#e8643a" }}>console.anthropic.com</a>.
-            {" "}Key chỉ lưu trong trình duyệt này. Để trống rồi bấm Lưu để quay về chế độ Demo.
+        <section style={{ margin: "8px 28px 0", padding: "14px 16px", background: t.sunken, borderRadius: 6, animation: "fadeSlide 0.2s ease" }}>
+          <label htmlFor="apiKeyInput" style={{ display: "block", fontSize: 15, fontWeight: 600 }}>Anthropic API key</label>
+          <p style={{ fontSize: 14, color: t.muted, margin: "2px 0 10px", lineHeight: 1.5 }}>
+            Lấy key tại <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color: t.ink }}>console.anthropic.com</a>.
+            Key chỉ lưu trong trình duyệt này. Để trống rồi bấm Lưu để quay về gợi ý mẫu.
           </p>
-          <div style={{ display:"flex", gap:8 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <input type="password" placeholder="sk-ant-..."
               defaultValue={apiKey}
               id="apiKeyInput"
               onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) saveApiKey(e.currentTarget.value.trim()); }}
               style={{
-                flex:1, padding:"8px 12px", border:`1px solid ${t.warnBorder}`,
-                borderRadius:7, outline:"none", fontFamily:"monospace",
-                fontSize:13, background: t.bg, color: t.text
+                flex: 1, minWidth: 0, height: 36, padding: "0 10px", border: `1px solid ${t.rule}`,
+                borderRadius: 6, outline: "none", fontFamily: "ui-monospace, monospace",
+                fontSize: 14, background: t.paper, color: t.ink
               }}/>
-            <button onClick={() => saveApiKey(document.getElementById("apiKeyInput").value.trim())}
-              style={{
-                background:"#e8643a", color:"#fff", border:"none",
-                borderRadius:7, padding:"8px 14px", cursor:"pointer",
-                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:13
-              }}>Lưu</button>
+            <button type="button" className="btn btn-ink" onClick={() => saveApiKey(document.getElementById("apiKeyInput").value.trim())}>Lưu key</button>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Filter tabs ── */}
-      <div style={{ display:"flex", gap:4, padding:"16px 24px 0" }}>
-        {[["all","Tất cả"],["active","Chưa xong"],["done","Đã xong"]].map(([f,label]) => (
-          <button key={f} onClick={() => setFilter(f)}
-            style={{
-              fontSize:13, fontWeight:600, padding:"6px 14px", borderRadius:20,
-              border:"none", cursor:"pointer", transition:"all 0.15s",
-              background: filter===f ? (dark ? "#e8e4dd" : "#1a1917") : "transparent",
-              color: filter===f ? (dark ? "#1a1917" : "#fff") : t.muted
-            }}>{label}</button>
-        ))}
-      </div>
-
-      {/* ── Quick add ── */}
-      <div style={{
-        margin:"16px 24px 0", background: t.inputBg,
-        border:`1.5px solid ${input ? "#e8643a" : t.border}`,
-        boxShadow: input ? "0 0 0 3px rgba(232,100,58,0.10)" : "none",
-        borderRadius:12, display:"flex", alignItems:"center",
-        overflow:"hidden", transition:"border-color 0.15s, box-shadow 0.15s"
-      }}>
-        <span style={{ padding:"0 12px 0 16px", color: t.faintTxt, display:"flex", alignItems:"center", flexShrink:0 }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M8 5v6M5 8h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </span>
-        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) addTask(); }}
-          placeholder="Thêm công việc… hoặc mô tả dự án cho AI"
-          style={{
-            flex:1, background:"none", border:"none", outline:"none",
-            fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14.5,
-            color: t.text, padding:"13px 0", caretColor:"#e8643a"
-          }}/>
-        <div style={{ display:"flex", alignItems:"center", paddingRight:8, gap:4 }}>
-          <button onClick={askAI} disabled={aiState === "loading"}
-            style={{
-              display:"flex", alignItems:"center", gap:5,
-              fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:600,
-              color:"#4f8ef7", background: t.aiBg, border:"none",
-              borderRadius:6, padding:"6px 10px", cursor:"pointer",
-              whiteSpace:"nowrap", opacity: aiState === "loading" ? 0.45 : 1
-            }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      {/* ── Thêm việc ── */}
+      <div style={{ padding: pad, marginTop: 16 }}>
+        <div className="add-row" style={{
+          borderBottom: `2px solid ${input ? t.ink : t.rule}`, paddingBottom: 8,
+          transition: "border-color 0.15s"
+        }}>
+          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) addTask(); }}
+            placeholder="Hôm nay cần làm gì?"
+            aria-label="Công việc mới"
+            className="add-input"
+            style={{ color: t.ink }}/>
+          <button type="button" className="btn" onClick={askAI} disabled={aiState === "loading"}
+            title="AI chia mục tiêu thành các việc nhỏ">
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
               <path d="M6 1l1.2 3.3L11 5l-3.3 1.2L6.5 10 5.3 6.2 1 5l4.3-1.2z" fill="currentColor"/>
             </svg>
-            AI
+            Gợi ý AI
           </button>
-          <button onClick={() => addTask()}
-            style={{
-              fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, fontWeight:700,
-              color:"#fff", background:"#e8643a", border:"none",
-              borderRadius:6, padding:"7px 14px", cursor:"pointer"
-            }}>Thêm</button>
+          <button type="button" className="btn btn-ink" onClick={() => addTask()}>Thêm việc</button>
         </div>
       </div>
 
-      {/* ── AI Panel ── */}
+      {/* ── Gợi ý AI ── */}
       {aiState !== "hidden" && (
-        <div style={{
-          margin:"12px 24px 0", border:`1.5px solid ${t.border}`,
-          borderRadius:12, overflow:"hidden", animation:"fadeSlide 0.2s ease"
-        }}>
-          <div style={{
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"12px 16px", background: t.aiBg, borderBottom:`1px solid ${t.border}`
-          }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12, fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"#4f8ef7" }}>
-              {aiState === "loading"
-                ? <div style={{ width:14, height:14, border:"2px solid rgba(79,142,247,0.2)", borderTopColor:"#4f8ef7", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
-                : <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 1l1.2 3.3L11 5l-3.3 1.2L6.5 10 5.3 6.2 1 5l4.3-1.2z" fill="#4f8ef7"/></svg>
-              }
-              {aiState === "loading" ? "AI đang phân tích…" : aiState === "error" ? "Lỗi" : isDemo ? "Gợi ý Demo" : "Gợi ý từ AI"}
-            </div>
-            <button onClick={() => setAiState("hidden")}
-              style={{ background:"none", border:"none", cursor:"pointer", color: t.faintTxt, fontSize:18, lineHeight:1 }}>×</button>
+        <section aria-live="polite" style={{ margin: "14px 28px 0", padding: "12px 16px 10px", background: t.sunken, borderRadius: 6, animation: "fadeSlide 0.2s ease" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              {aiState === "loading" && (
+                <span aria-hidden="true" style={{ width: 14, height: 14, border: `2px solid ${t.rule}`, borderTopColor: t.ink, borderRadius: "50%", animation: "spin 0.7s linear infinite" }}/>
+              )}
+              {aiState === "loading" ? "Đang chia nhỏ mục tiêu" : aiState === "error" ? "Chưa tạo được gợi ý" : isDemo ? "Gợi ý mẫu" : "AI gợi ý"}
+            </h2>
+            <button type="button" className="icon-btn" onClick={() => setAiState("hidden")} aria-label="Đóng khung gợi ý" style={{ width: 28, height: 28 }}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
           </div>
 
-          {(isDemo && aiState === "done") ? <DemoBanner t={t}/> : null}
+          {isDemo && aiState === "done" && <DemoBanner t={t} onOpenKey={() => setShowKeyInput(true)}/>}
 
-          <div style={{ padding:"12px 14px", background: t.bg }}>
-            {aiState === "loading" && (
-              <div style={{ fontSize:13, color: t.muted, display:"flex", alignItems:"center", gap:6 }}>
-                <div style={{ width:14, height:14, border:`2px solid ${t.border}`, borderTopColor: t.muted, borderRadius:"50%", animation:"spin 0.7s linear infinite", flexShrink:0 }}/>
-                Đang tạo gợi ý…
-              </div>
-            )}
-            {aiState === "error" && (
-              <p style={{ fontSize:13, color:"#e8643a" }}>{aiError || "Không thể tạo gợi ý. Thử lại sau."}</p>
-            )}
-            {aiState === "done" && (
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+          {aiState === "error" && (
+            <p style={{ fontSize: 14, color: t.red, paddingBottom: 6 }}>{aiError || "Không tạo được gợi ý. Thử lại sau."}</p>
+          )}
+          {aiState === "done" && (
+            <React.Fragment>
+              <ul style={{ listStyle: "none" }}>
                 {suggestions.map((s, i) => (
                   <SuggestionRow key={i} text={s} added={addedSuggestions.has(i)} onAdd={() => addSuggestion(i)} t={t}/>
                 ))}
+              </ul>
+              <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 10, borderTop: `1px solid ${t.rule}` }}>
+                <button type="button" className="btn btn-ink" onClick={addAll} disabled={allSuggestionsAdded}>
+                  {allSuggestionsAdded ? "Đã thêm cả " + suggestions.length + " việc" : "Thêm cả " + suggestions.length + " việc"}
+                </button>
               </div>
-            )}
-          </div>
-
-          {aiState === "done" && (
-            <div style={{
-              display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"10px 14px", borderTop:`1px solid ${t.border}`, background: t.surface
-            }}>
-              <span style={{ fontSize:12, color: t.faintTxt }}>{suggestions.length} gợi ý</span>
-              <button onClick={addAll} disabled={allSuggestionsAdded}
-                style={{
-                  fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:700,
-                  color:"#fff", background: allSuggestionsAdded ? "#30a46c" : "#4f8ef7", border:"none",
-                  borderRadius:6, padding:"7px 14px", cursor: allSuggestionsAdded ? "default" : "pointer"
-                }}>{allSuggestionsAdded ? "✓ Đã thêm hết" : "Thêm tất cả"}</button>
-            </div>
+            </React.Fragment>
           )}
-        </div>
+        </section>
       )}
 
-      {/* ── Section label ── */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 24px 8px" }}>
-        <span style={{ fontSize:11, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color: t.faintTxt }}>
-          {sectionLabel}
-        </span>
-        <span style={{ fontSize:12, fontWeight:600, color: t.faintTxt, background: t.pill, padding:"2px 8px", borderRadius:10 }}>
-          {sectionCount}
-        </span>
+      {/* ── Bộ lọc ── */}
+      {tasks.length > 0 && (
+        <nav aria-label="Lọc công việc" style={{ display: "flex", gap: 22, padding: pad, marginTop: 22 }}>
+          {FILTERS.map(([f, label, count]) => (
+            <button key={f} type="button" onClick={() => setFilter(f)} aria-pressed={filter === f}
+              style={{
+                border: 0, background: "none", cursor: "pointer", padding: "4px 0",
+                fontSize: 15, fontWeight: filter === f ? 600 : 500,
+                color: filter === f ? t.ink : t.muted,
+                borderBottom: `2px solid ${filter === f ? t.ink : "transparent"}`,
+              }}>
+              {label} <span style={{ color: t.faint, fontWeight: 500 }}>{count}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <div style={{ padding: pad, marginTop: 10 }}>
+        <FilterHint filter={filter} t={t} show={filter === "active" || (filter === "done" && done.length > 0)}/>
+
+        {mainItems.length > 0 && (
+          <ul style={{ listStyle: "none", borderBottom: `1px solid ${t.rule}` }}>
+            {mainItems.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                onToggle={toggleTask}
+                onUpdate={updateTask}
+                onSetPriority={setTaskPriority}
+                onDelete={deleteTask}
+                animating={newIds.has(task.id)}
+                t={t}
+              />
+            ))}
+          </ul>
+        )}
       </div>
 
-      <FilterHint
-        filter={filter} t={t} dark={dark}
-        show={filter === "active" || (filter === "done" && done.length > 0)}
-      />
-
-      {/* ── Task table ── */}
-      <div style={{ margin:"0 12px 8px", flex:1, padding:4, borderRadius:14, border:`1px solid ${t.listBorder}`, background:t.listInner }}>
-        <div className="task-table-wrap" style={{
-          borderRadius:10, border:`1px solid ${t.frameInner}`,
-          backgroundColor: dark ? "rgba(28,28,26,0.5)" : "rgba(255,255,255,0.65)",
-          minHeight: mainItems.length ? 0 : 120,
-        }}>
-          <table className="task-table">
-            <thead>
-              <tr style={{ color: t.faintTxt }}>
-                <th style={{ width:40, textAlign:"center" }}>STT</th>
-                <th>Tên hoạt động</th>
-                <th style={{ width:108, textAlign:"center" }}>Ưu tiên</th>
-                <th>Ghi chú</th>
-                <th style={{ width:52, textAlign:"center" }}>Xong</th>
-                <th style={{ width:36 }} aria-label="Xóa"/>
-              </tr>
-            </thead>
-            <tbody>
-              {mainItems.map((task, i) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  stt={task.order}
-                  onToggle={toggleTask}
-                  onUpdate={updateTask}
-                  onSetPriority={setTaskPriority}
-                  onDelete={deleteTask}
-                  animating={newIds.has(task.id)}
-                  t={t}
-                  dark={dark}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── Victory quote (stays after adding new tasks) ── */}
+      {/* ── Lời chúc sau khi xong hết (vẫn giữ khi thêm việc mới) ── */}
       {victoryVisible && done.length > 0 && filter !== "done" && (
-        <EmptyIllustration
-          dark={dark}
-          variant="victory"
-          compact={active.length > 0}
-        />
+        <EmptyIllustration dark={dark} variant="victory" compact={active.length > 0}/>
       )}
 
-      {/* ── Active tab: cleared queue (hint banner already shown above) ── */}
       {filter === "active" && active.length === 0 && done.length > 0 && (
-        <p style={{ textAlign:"center", fontSize:13, color: t.muted, padding:"8px 24px 24px", lineHeight:1.6 }}>
-          Thêm việc mới ở ô phía trên khi bạn sẵn sàng tiếp tục.
+        <p style={{ textAlign: "center", fontSize: 15, color: t.muted, padding: "8px 28px 24px" }}>
+          Hết việc rồi. Thêm việc mới ở ô phía trên khi bạn sẵn sàng.
         </p>
       )}
 
-      {/* ── Empty start (tất cả, chưa có task) ── */}
-      {tasks.length === 0 && filter === "all" && (
+      {tasks.length === 0 && (
         <EmptyIllustration dark={dark} variant="empty" compact={false}/>
       )}
 
-      {/* ── Empty: đã xong tab ── */}
-      {filter === "done" && done.length === 0 && (
-        <div style={{ textAlign:"center", padding:"32px 24px 40px" }}>
-          <p style={{ fontSize:15, fontWeight:600, color: t.text, marginBottom:8 }}>Chưa có việc hoàn thành</p>
-          <p style={{ fontSize:13, color: t.muted, lineHeight:1.6, maxWidth:320, margin:"0 auto" }}>
-            Tick xong việc ở tab Chưa xong hoặc Tất cả — lời chúc mừng sẽ hiện ở đây.
+      {filter === "done" && done.length === 0 && tasks.length > 0 && (
+        <div style={{ textAlign: "center", padding: "24px 28px 32px" }}>
+          <p style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>Chưa xong việc nào</p>
+          <p style={{ fontSize: 15, color: t.muted, maxWidth: 340, margin: "0 auto", lineHeight: 1.55 }}>
+            Tick vào ô vuông cạnh một việc khi làm xong, nó sẽ hiện ở đây.
           </p>
         </div>
       )}
 
-      <div style={{ height:40 }}/>
-    </div>
-    </div>
+      <div style={{ height: 36 }}/>
+    </main>
     </React.Fragment>
   );
 }
