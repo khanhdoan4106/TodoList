@@ -1,24 +1,13 @@
 // src/components/DemoBanner.js
-function DemoBanner({ t }) {
-  const [closed, setClosed] = React.useState(false);
-  if (closed) return null;
+// Một dòng giải thích trong khung gợi ý khi chưa có API key.
+function DemoBanner({ t, onOpenKey }) {
   return (
-    <div style={{
-      margin:"8px 24px 0", padding:"10px 14px",
-      background: t.aiBg, borderRadius:10,
-      border:`1px solid ${t.border}`, animation:"fadeSlide 0.2s ease",
-      display:"flex", alignItems:"flex-start", gap:10
-    }}>
-      <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>✨</span>
-      <div style={{ flex:1 }}>
-        <p style={{ fontSize:12.5, color: t.aiTxt, fontWeight:700, marginBottom:3 }}>Chế độ Demo AI</p>
-        <p style={{ fontSize:12, color: t.muted, lineHeight:1.5 }}>
-          Đây là gợi ý mẫu. Để dùng AI thật, thêm API Key từ{" "}
-          <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color: t.aiTxt }}>console.anthropic.com</a>.
-        </p>
-      </div>
-      <button onClick={() => setClosed(true)}
-        style={{ background:"none", border:"none", cursor:"pointer", color: t.muted, fontSize:16, lineHeight:1, flexShrink:0 }}>×</button>
-    </div>
+    <p style={{ fontSize: 14, color: t.muted, padding: "0 0 8px" }}>
+      Đây là gợi ý mẫu vì chưa có API key.{" "}
+      <button type="button" onClick={onOpenKey}
+        style={{ border: 0, background: "none", padding: 0, color: t.ink, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>
+        Thêm API key
+      </button>{" "}để dùng AI thật.
+    </p>
   );
 }

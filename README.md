@@ -9,7 +9,7 @@ TodoList là ứng dụng quản lý công việc cá nhân với giao diện t�
 * Thiết lập mức độ ưu tiên bằng hệ thống đánh giá sao
 * Ghi chú cho từng công việc
 * Bộ lọc công việc: Tất cả, Chưa xong, Đã xong
-* Theo dõi tiến độ hoàn thành theo phần trăm
+* Đầu trang dạng tờ lịch bloc: ngày, thứ, ngày âm lịch và tiến độ trong ngày
 * Gợi ý chia nhỏ công việc bằng AI (Claude API), có chế độ Demo khi chưa nhập API Key
 * Hiệu ứng pháo hoa khi hoàn thành tất cả công việc
 * Hỗ trợ chế độ sáng và tối
@@ -32,11 +32,12 @@ TodoList/
     ├── App.js            # Component gốc — nạp sau cùng
     ├── utils.js          # Hằng số, hàm thuần, gọi/parse AI
     ├── theme.js          # Bảng màu sáng/tối (useTheme)
+    ├── lunar.js          # Đổi ngày dương sang âm lịch (thuật toán Hồ Ngọc Đức)
     ├── styles.css        # CSS toàn cục, animation
     └── components/       # Các component giao diện
         ├── TaskRow.js, Checkbox.js, StarRating.js
         ├── SuggestionRow.js, DemoBanner.js, FilterHint.js
-        ├── ProgressRing.js, DarkToggle.js
+        ├── CalendarSheet.js, DarkToggle.js
         ├── EmptyIllustration.js, IllustGlow.js, SceneClock.js
         └── Fireworks.js, CelebrationBanner.js
 ```

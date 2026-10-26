@@ -3,22 +3,24 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Focus — AI To-Do</title>
+  <title>Hôm nay</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet"/>
   <link href="src/styles.css" rel="stylesheet"/>
 </head>
-<body class="light">
+<body>
 <div id="root"></div>
 
 
 <script type="text/babel" data-presets="react" src="src/utils.js"></script>
 <script type="text/babel" data-presets="react" src="src/theme.js"></script>
+<script type="text/babel" data-presets="react" src="src/lunar.js"></script>
 
 <script type="text/babel" data-presets="react" src="src/components/IllustGlow.js"></script>
-<script type="text/babel" data-presets="react" src="src/components/ProgressRing.js"></script>
 <script type="text/babel" data-presets="react" src="src/components/DarkToggle.js"></script>
 <script type="text/babel" data-presets="react" src="src/components/Checkbox.js"></script>
 <script type="text/babel" data-presets="react" src="src/components/StarRating.js"></script>
@@ -28,6 +30,7 @@
 <script type="text/babel" data-presets="react" src="src/components/FilterHint.js"></script>
 <script type="text/babel" data-presets="react" src="src/components/DemoBanner.js"></script>
 <script type="text/babel" data-presets="react" src="src/components/SuggestionRow.js"></script>
+<script type="text/babel" data-presets="react" src="src/components/CalendarSheet.js"></script>
 
 <!-- Phụ thuộc các component ở trên -->
 <script type="text/babel" data-presets="react" src="src/components/TaskRow.js"></script>

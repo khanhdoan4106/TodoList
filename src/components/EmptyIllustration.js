@@ -173,36 +173,25 @@ function EmptyIllustration({ dark, variant, compact }) {
       )}
 
       {isVictory ? (
-        <div style={{
-          maxWidth:400, margin: compact ? "0 auto" : "8px auto 0",
-          padding: compact ? "16px 18px" : "20px 22px",
-          borderRadius:12,
-          border: dark ? "1px solid #3d4a28" : "1px solid #ffd93d",
-          background: dark ? "rgba(45,58,30,0.55)" : "rgba(255,248,220,0.85)",
+        <figure style={{
+          maxWidth: 420, margin: compact ? "0 auto" : "8px auto 0",
+          padding: "4px 0 4px 18px", textAlign: "left",
+          borderLeft: "3px solid var(--red)",
         }}>
-          <p style={{
-            fontSize: compact ? 14.5 : 16, fontWeight:500, fontStyle:"italic",
-            color: dark ? "#e8e4dd" : "#1a1917", lineHeight:1.65, margin:0,
-          }}>
+          <blockquote style={{ fontSize: compact ? 16 : 18, fontStyle: "italic", lineHeight: 1.55, color: "var(--ink)" }}>
             &ldquo;{VICTORY_QUOTE.text}&rdquo;
-          </p>
-          <p style={{
-            fontSize:12, fontWeight:700, letterSpacing:"0.04em",
-            color: dark ? "#c5e17a" : "#6b8e23", marginTop:12, marginBottom:0,
-          }}>
-            — {VICTORY_QUOTE.author}
-          </p>
-          <p style={{ fontSize:11, color: dark ? "#6b6660" : "#9a9590", marginTop:4 }}>
-            {VICTORY_QUOTE.source}
-          </p>
-        </div>
+          </blockquote>
+          <figcaption style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
+            {VICTORY_QUOTE.author}, <cite>{VICTORY_QUOTE.source}</cite>
+          </figcaption>
+        </figure>
       ) : (
         <div>
-          <h3 style={{ fontSize:17, fontWeight:700, color: dark ? "#e8e4dd" : "#1a1917", marginBottom:6 }}>
-            Bắt đầu ngày mới
-          </h3>
-          <p style={{ fontSize:13.5, color: dark ? "#6b6660" : "#6b6660", lineHeight:1.6 }}>
-            Thêm việc cần làm ở ô phía trên.
+          <h2 style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>
+            Tờ lịch hôm nay còn trống
+          </h2>
+          <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6 }}>
+            Gõ việc đầu tiên vào ô phía trên, hoặc mô tả một mục tiêu rồi bấm Gợi ý AI để chia nhỏ.
           </p>
         </div>
       )}
